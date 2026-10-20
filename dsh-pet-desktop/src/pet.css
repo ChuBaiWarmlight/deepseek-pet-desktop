@@ -896,6 +896,29 @@ body::-webkit-scrollbar,
   line-height: 1.5;
   color: var(--ink-2);
 }
+.dsh-vpet-relation-collection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+.dsh-vpet-relation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--ink-2);
+  font-size: 10px;
+  opacity: 0.45;
+}
+.dsh-vpet-relation-chip.is-unlocked {
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  font-weight: 700;
+  opacity: 1;
+}
 .dsh-vpet-status-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -10,6 +10,21 @@ const tokenDialog = ref(false)
 const tokenText = ref('')
 const tokenDevice = ref('')
 
+const MOOD_LABEL = {
+  normal: '正常',
+  happy: '开心',
+  shy: '害羞',
+  curious: '好奇',
+  bored: '无聊',
+  tired: '困倦',
+  sad: '低落',
+  angry: '生气',
+}
+
+function moodText(value) {
+  return MOOD_LABEL[value] || value || '—'
+}
+
 async function loadPets() {
   loading.value = true
   try {
@@ -125,7 +140,9 @@ onBeforeUnmount(() => {
         <el-table-column label="性格" width="70" align="center">
           <template #default="{ row }">{{ row.personality }}</template>
         </el-table-column>
-        <el-table-column prop="mood" label="情绪" width="80" />
+        <el-table-column label="情绪" width="80">
+          <template #default="{ row }">{{ moodText(row.mood) }}</template>
+        </el-table-column>
         <el-table-column label="DSH" width="70" align="center">
           <template #default="{ row }">
             <el-tag :type="row.dshOnline ? 'success' : 'warning'" size="small">{{ row.dshOnline ? '通' : '断' }}</el-tag>

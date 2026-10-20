@@ -139,6 +139,9 @@ export interface AssetsItem {
   name: string;
   category: string;
   sha256?: string;
+  size?: number;
+  weight?: number;
+  tags?: string[];
 }
 
 export interface AssetsCheck {

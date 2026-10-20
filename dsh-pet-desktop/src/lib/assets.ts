@@ -6,7 +6,31 @@ import { bridge } from "./bridge";
 import type { AssetsItem } from "./types";
 import { CAT } from "./constants";
 
-/** 动画池槽位结构（与 CAT 一致，但内容可被平台 manifest 覆盖）。 */
+/** 动画槽位（平台分类与桌宠行为共用的一套名字）。 */
+export type AnimSlot =
+  | "idle"
+  | "turn"
+  | "move"
+  | "click"
+  | "drag"
+  | "sleep"
+  | "wake"
+  | "focus"
+  | "celebrate"
+  | "stretch"
+  | "act";
+
+/** 一个可播放动画及其被抽中的相对权重。 */
+export interface AnimVariant {
+  name: string;
+  weight: number;
+  /** 语义标签，格式 `key:value`，例如 `scene:work`、`mood:happy`、`cooldown:300`。 */
+  tags: string[];
+}
+
+/** 动画池槽位结构（与 CAT 一致，但内容可被平台 manifest 覆盖）。
+ *  `variants` 保存每个分类的全部候选，调度器按 weight 加权抽取；
+ *  顶层字符串/数组保留为兼容字段，也是平台离线时的兜底。 */
 export interface AnimPool {
   idle: string;
   turn: string;
@@ -19,25 +43,134 @@ export interface AnimPool {
   celebrate: string;
   stretch: string;
   acts: string[];
+  variants: Record<AnimSlot, AnimVariant[]>;
 }
 
 /** 平台分类 → 桌宠动画槽位 映射。 */
-const CATEGORY_TO_SLOT: Record<string, keyof AnimPool> = {
+const CATEGORY_TO_SLOT: Record<string, AnimSlot> = {
   idle: "idle",
   turn: "turn",
-  move: "moves",
-  click: "clicks",
+  move: "move",
+  click: "click",
   drag: "drag",
   sleep: "sleep",
   wake: "wake",
   focus: "focus",
   celebrate: "celebrate",
   stretch: "stretch",
-  act: "acts",
+  act: "act",
 };
 
-/** 数组槽位（这些槽位可以有多个动画，随机选取）。 */
-const ARRAY_SLOTS = new Set<keyof AnimPool>(["moves", "clicks", "acts"]);
+const SLOT_ORDER: AnimSlot[] = [
+  "idle",
+  "turn",
+  "move",
+  "click",
+  "drag",
+  "sleep",
+  "wake",
+  "focus",
+  "celebrate",
+  "stretch",
+  "act",
+];
+
+function emptyVariants(): Record<AnimSlot, AnimVariant[]> {
+  return {
+    idle: [],
+    turn: [],
+    move: [],
+    click: [],
+    drag: [],
+    sleep: [],
+    wake: [],
+    focus: [],
+    celebrate: [],
+    stretch: [],
+    act: [],
+  };
+}
+
+function primaryName(pool: AnimPool, slot: AnimSlot): string {
+  switch (slot) {
+    case "idle":
+      return pool.idle;
+    case "turn":
+      return pool.turn;
+    case "move":
+      return pool.moves[0] ?? pool.idle;
+    case "click":
+      return pool.clicks[0] ?? pool.idle;
+    case "drag":
+      return pool.drag;
+    case "sleep":
+      return pool.sleep;
+    case "wake":
+      return pool.wake;
+    case "focus":
+      return pool.focus;
+    case "celebrate":
+      return pool.celebrate;
+    case "stretch":
+      return pool.stretch;
+    case "act":
+      return pool.acts[0] ?? pool.idle;
+  }
+}
+
+function setPrimary(pool: AnimPool, slot: AnimSlot, name: string): void {
+  switch (slot) {
+    case "idle":
+      pool.idle = name;
+      break;
+    case "turn":
+      pool.turn = name;
+      break;
+    case "drag":
+      pool.drag = name;
+      break;
+    case "sleep":
+      pool.sleep = name;
+      break;
+    case "wake":
+      pool.wake = name;
+      break;
+    case "focus":
+      pool.focus = name;
+      break;
+    case "celebrate":
+      pool.celebrate = name;
+      break;
+    case "stretch":
+      pool.stretch = name;
+      break;
+    case "move":
+    case "click":
+    case "act":
+      break;
+  }
+}
+
+function addVariant(pool: AnimPool, slot: AnimSlot, name: string, weight = 100, tags: string[] = []): void {
+  if (!name) return;
+  const list = pool.variants[slot];
+  const w = Number.isFinite(weight) ? Math.max(0, Math.min(1000, Math.round(weight))) : 100;
+  const cleanTags = Array.isArray(tags)
+    ? tags.map((tag) => String(tag).trim()).filter(Boolean)
+    : [];
+  const existing = list.find((v) => v.name === name);
+  if (existing) {
+    existing.tags = mergeUnique(existing.tags, cleanTags);
+    if (w > 0) existing.weight = w;
+    return;
+  }
+  list.push({ name, weight: w, tags: cleanTags });
+}
+
+function mergeUnique(target: string[], names: string[]): string[] {
+  for (const n of names) if (!target.includes(n)) target.push(n);
+  return target;
+}
 
 /** 内置动画名集合（打进 exe 的离线兜底动画，永远用内置资源，不下载缓存）。
  *  为减小 exe 体积，仅保留核心状态循环 + 基础交互；其余动作走平台下载缓存。 */
@@ -66,30 +199,80 @@ export function buildAnimPool(items: AssetsItem[]): AnimPool {
     celebrate: CAT.celebrate,
     stretch: CAT.stretch,
     acts: [...CAT.acts],
+    variants: emptyVariants(),
   };
 
-  // 按槽位收集平台资源名（去掉 .webm 后缀）
-  const bySlot: Partial<Record<keyof AnimPool, string[]>> = {};
+  // 内置 CAT 先入池，保证平台离线时每个分类都有可播放的兜底。
+  addVariant(pool, "idle", CAT.idle);
+  addVariant(pool, "turn", CAT.turn);
+  for (const n of CAT.moves) addVariant(pool, "move", n);
+  for (const n of CAT.clicks) addVariant(pool, "click", n);
+  addVariant(pool, "drag", CAT.drag);
+  addVariant(pool, "sleep", CAT.sleep);
+  addVariant(pool, "wake", CAT.wake);
+  addVariant(pool, "focus", CAT.focus);
+  addVariant(pool, "celebrate", CAT.celebrate);
+  addVariant(pool, "stretch", CAT.stretch);
+  for (const n of CAT.acts) addVariant(pool, "act", n);
+
+  // 按槽位收集平台资源名（去掉 .webm 后缀）与权重。
+  const bySlot: Partial<Record<AnimSlot, string[]>> = {};
   for (const item of items) {
     const slot = CATEGORY_TO_SLOT[item.category];
     if (!slot) continue;
-    const name = item.file.replace(/\.webm$/, "");
+    const name = item.file.replace(/\.webm$/i, "");
     if (!name) continue;
+    addVariant(
+      pool,
+      slot,
+      name,
+      typeof item.weight === "number" ? item.weight : 100,
+      Array.isArray(item.tags) ? item.tags : [],
+    );
     (bySlot[slot] ||= []).push(name);
   }
 
-  for (const slot of Object.keys(bySlot) as (keyof AnimPool)[]) {
+  for (const slot of SLOT_ORDER) {
     const names = bySlot[slot];
     if (!names || !names.length) continue;
-    if (ARRAY_SLOTS.has(slot)) {
-      const arr = pool[slot] as string[];
-      for (const n of names) if (!arr.includes(n)) arr.push(n);
-    } else {
-      (pool[slot] as string) = names[0];
-    }
+    if (slot === "move") pool.moves = mergeUnique(pool.moves, names);
+    else if (slot === "click") pool.clicks = mergeUnique(pool.clicks, names);
+    else if (slot === "act") pool.acts = mergeUnique(pool.acts, names);
+    else setPrimary(pool, slot, names[0]);
   }
 
   return pool;
+}
+
+/** 按权重抽取一个动画；`exclude` 用于避免同一个动作连续播放。
+ *  权重为 0 的变体视为停用；全部停用时回退到该槽位的主动画。 */
+/** 从一组候选里按权重抽取；供调度器在上下文过滤后复用。 */
+export function pickWeightedVariants(
+  variants: AnimVariant[],
+  fallback: string,
+  exclude?: string,
+  random = Math.random(),
+): string {
+  const available = variants.filter((v) => v.weight > 0);
+  if (!available.length) return fallback;
+  const candidates = exclude && available.length > 1 ? available.filter((v) => v.name !== exclude) : available;
+  const total = candidates.reduce((sum, v) => sum + v.weight, 0);
+  if (total <= 0) return fallback;
+  let roll = Math.min(Math.max(random, 0), 0.999999999) * total;
+  for (const v of candidates) {
+    roll -= v.weight;
+    if (roll < 0) return v.name;
+  }
+  return candidates[candidates.length - 1].name;
+}
+
+export function pickWeighted(
+  pool: AnimPool,
+  slot: AnimSlot,
+  exclude?: string,
+  random = Math.random(),
+): string {
+  return pickWeightedVariants(pool.variants[slot] || [], primaryName(pool, slot), exclude, random);
 }
 
 /** 判断动画名是否内置（内置动画直接用内置资源，不下载缓存）。 */

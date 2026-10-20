@@ -1,7 +1,8 @@
 // 状态面板：好感/毒舌/情绪/性格 + 今日统计 + 成就进度。
 
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
-import { ACHIEVEMENTS, type RelationStage } from "../lib/constants";
+import { ACHIEVEMENTS, RELATION_STAGES, type RelationStage } from "../lib/constants";
+import { moodMeta } from "../lib/mood";
 import type { DayStats, DshCheck, SystemSnapshot } from "../lib/types";
 import { PanelHead } from "./PanelHead";
 
@@ -24,7 +25,7 @@ interface StatusPanelProps {
 
 export function StatusPanel(props: StatusPanelProps) {
   const drag = usePanelDrag(props.anchor);
-  const moodLabel: Record<string, string> = { normal: "正常", happy: "开心", angry: "生气", sleepy: "困倦" };
+  const mood = moodMeta(props.mood);
   return (
     <div ref={drag.ref} className="dsh-vpet-status">
       <PanelHead
@@ -52,7 +53,7 @@ export function StatusPanel(props: StatusPanelProps) {
       </div>
       <div className="dsh-vpet-status-row">
         <span className="dsh-vpet-status-k">情绪</span>
-        <span className="dsh-vpet-status-v">{moodLabel[props.mood] ?? "正常"}</span>
+        <span className="dsh-vpet-status-v">{mood.emoji} {mood.label}</span>
       </div>
       <div className="dsh-vpet-status-row">
         <span className="dsh-vpet-status-k">性格</span>
@@ -87,6 +88,22 @@ export function StatusPanel(props: StatusPanelProps) {
           : "已经是最亲密的阶段了"}
       </div>
       <div className="dsh-vpet-relation-hint">已解锁动作：{props.relationStage.action}</div>
+      <div className="dsh-vpet-relation-collection">
+        {RELATION_STAGES.map((stage) => {
+          const unlocked = props.affinity >= stage.min;
+          return (
+            <span
+              key={stage.id}
+              className={`dsh-vpet-relation-chip${unlocked ? " is-unlocked" : ""}`}
+              title={unlocked ? `${stage.name}：${stage.action}` : `好感度 ${stage.min} 解锁`}
+            >
+              <span>{stage.emoji}</span>
+              <span>{stage.name}</span>
+              {stage.accessory && <span>{stage.accessory}</span>}
+            </span>
+          );
+        })}
+      </div>
       <div className="dsh-vpet-status-row">
         <span className="dsh-vpet-status-k">DSH</span>
         <span className="dsh-vpet-status-v">{props.dsHealth?.online ? "已连接" : "未连接"}</span>

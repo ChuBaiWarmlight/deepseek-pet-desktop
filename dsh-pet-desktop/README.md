@@ -50,8 +50,24 @@ pnpm tauri dev     # 前端 + 桌宠开发模式（走 devUrl）
 
 桌宠内嵌了内置动画做兜底，平台不在线也能正常显示；要「传新动作 + 遥控」则需保证 dsh-pet-assets 在运行。
 
-为减小 exe 体积，桌宠**只内嵌 5 段核心兜底动画**（待机 / 东张西望 / 拖拽 / 睡眠 / 唤醒，位于 `public/assets/videos/`），其余约 46 段动作**直接从平台 HTTP 流式播放**（`assets_resolve` 返回 `http://127.0.0.1:8787/assets/videos/{name}.webm`）。平台不在线时，这些非内置动作会回退到内置「待机」动画（见 `src/lib/assets.ts` 的 `BUILTIN_NAMES` / `FALLBACK_ANIM`）。被移出的视频备份在项目根目录 `_external-videos/`（平台已持有全部资源，确认后可删除该备份）。
+为减小 exe 体积，桌宠**只内嵌 5 段核心兜底动画**（待机 / 东张西望 / 拖拽 / 睡眠 / 唤醒，位于 `public/assets/videos/`），其余约 52 段动作**直接从平台 HTTP 流式播放**（`assets_resolve` 返回 `http://127.0.0.1:8787/assets/videos/{name}.webm`）。平台不在线时，这些非内置动作会回退到内置「待机」动画（见 `src/lib/assets.ts` 的 `BUILTIN_NAMES` / `FALLBACK_ANIM`）。被移出的视频备份在项目根目录 `_external-videos/`（平台已持有全部资源，确认后可删除该备份）。
 
-> **依赖提醒**：这 46 段非内置动作依赖 dsh-pet-assets 在运行（默认 `http://127.0.0.1:8787`），平台一停它们就会退回内置兜底。平台需以独立进程常驻（如 `node server.mjs`），不要让它的生命周期挂在某个终端/任务上。
+> **依赖提醒**：这 52 段非内置动作依赖 dsh-pet-assets 在运行（默认 `http://127.0.0.1:8787`），平台一停它们就会退回内置兜底。平台需以独立进程常驻（如 `node server.mjs`），不要让它的生命周期挂在某个终端/任务上。
 
 > **CSP 说明**：视频元素跨源加载平台媒体，`index.html` 的 CSP 里 `media-src` 必须放行 `http:`/`https:`（即 `media-src 'self' http: https: blob:`）。若把 `media-src` 收紧为仅 `'self'`，跨源视频会被拦截，`<video>` 报 `MEDIA_ERR_SRC_NOT_SUPPORTED`（code=4）且 `currentSrc` 为空。
+
+## 行为与心情
+
+桌宠的心情由真实事件驱动，并会影响动作选择和台词语气：
+
+| 心情 | 触发 | 效果 |
+| --- | --- | --- |
+| 开心 | 摸头、投喂、任务完成 | 更容易抽到 `mood:happy` 动作，语气更软 |
+| 害羞 | 摸尾巴 | 嘴硬躲闪，`mood:shy` 动作加权 |
+| 好奇 | 聊天、DSH 正在工作 | `mood:curious` 动作加权，会探头探脑 |
+| 生气 | 连续戳 4 次 | 30 秒内语气更冲，`mood:angry` 动作加权 |
+| 低落 | DSH 任务失败 | 3 分钟内语气低落，`mood:sad` 动作加权 |
+| 困倦 | 23:00–06:00 仍醒着 | `mood:tired` 动作加权，说话带困意 |
+| 无聊 | 3–8 分钟没有互动 | `mood:bored` 动作加权，会主动找事做 |
+
+高优先级心情不会被低优先级事件覆盖；摸头、投喂和任务完成可以强制把宠物哄好。心情会随主状态持久化，重启后未过期的定时心情继续生效。调度器会把这些标签与时间、场景、冷却一起评分，具体见 `src/lib/mood.ts` 和 `src/lib/behaviorScheduler.ts`。

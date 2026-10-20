@@ -33,7 +33,15 @@ import {
   validScale,
 } from "./lib/constants";
 import type { Achievement, ThemeId } from "./lib/constants";
-import { buildAnimPool, isBuiltinName, resolveVideoUrl, FALLBACK_ANIM, type AnimPool } from "./lib/assets";
+import {
+  buildAnimPool,
+  isBuiltinName,
+  pickWeighted,
+  resolveVideoUrl,
+  FALLBACK_ANIM,
+  type AnimPool,
+  type AnimSlot,
+} from "./lib/assets";
 import {
   BehaviorScheduler,
   sceneLabel,
@@ -44,8 +52,9 @@ import { fetchRecentContext, pollDsh, pollTaskboard } from "./lib/dsh";
 import { pollSystem } from "./lib/system";
 import { renderReportCard } from "./lib/reportCard";
 import { loadJson, saveJson } from "./lib/storage";
-import { clamp, pick2 } from "./lib/utils";
+import { clamp } from "./lib/utils";
 import { primeVoices, speak, stopSpeaking } from "./lib/voice";
+import { applyMood, fallbackLineFor, normalizeMood, resolveMood, type MoodId } from "./lib/mood";
 import type {
   ChatTurn,
   DailyReport,
@@ -191,6 +200,15 @@ function effectiveIdleMs(): number {
   return M.system ? M.system.idleSecs * 1000 : Date.now() - M.idleSinceMs;
 }
 
+/** 定时心情到期后回退到基线（深夜困倦 / 久未互动无聊），而不是永远停在上一情绪。 */
+function currentMood(): string {
+  return resolveMood(M, {
+    now: Date.now(),
+    idleMs: effectiveIdleMs(),
+    sleeping: M.sleeping,
+  });
+}
+
 /** 安静时段/会议场景只拦截主动开口，用户主动交互不受影响。 */
 function proactiveSpeechBlocked(): boolean {
   return (M.quietOn && isQuietTime(M.quietFrom, M.quietTo)) || M.sceneMute || M.sceneMode === "dnd";
@@ -204,6 +222,7 @@ export function PetApp() {
   const [animSrc, setAnimSrc] = useState<string>("/assets/videos/" + encodeURIComponent("待机呼吸休闲") + ".webm");
   const resolveSeq = useRef(0);
   const catRef = useRef<AnimPool>(buildAnimPool([]));
+  const poolDiagRef = useRef("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoFailed, setVideoFailed] = useState(false); // 视频加载/播放失败时降级为 emoji 占位
   const [assetsOnline, setAssetsOnline] = useState(false);
@@ -277,6 +296,16 @@ export function PetApp() {
 
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const refreshState = useCallback(() => setStateVersion((v) => v + 1), []);
+  /** 事件心情统一入口：低优先级不会覆盖高优先级，force 用于摸头/投喂把宠物哄好。 */
+  const changeMood = useCallback(
+    (next: MoodId, ttlMs?: number, force = false) => {
+      if (applyMood(M, next, { ttlMs, force })) {
+        void bridge.diagLog(`mood -> ${M.mood}`).catch(() => {});
+        refreshState();
+      }
+    },
+    [refreshState],
+  );
   const schedulerRef = useRef(new BehaviorScheduler());
   const behaviorSnapshot = useCallback(
     (): BehaviorSnapshot => ({
@@ -289,6 +318,7 @@ export function PetApp() {
       quiet: M.quietOn && isQuietTime(M.quietFrom, M.quietTo),
       meeting: M.sceneMute,
       sceneMode: M.sceneMode,
+      mood: currentMood(),
     }),
     [],
   );
@@ -317,6 +347,8 @@ export function PetApp() {
       hidden: M.hidden,
       affinity: M.affinity,
       sass: M.sass,
+      mood: M.mood,
+      moodUntilMs: M.moodUntilMs,
       name: M.name,
       birthday: M.birthday,
       waterOn,
@@ -543,7 +575,7 @@ export function PetApp() {
         topic,
         affinity: M.affinity,
         sass: M.sass,
-        mood: M.mood,
+        mood: currentMood(),
         name: M.name,
         personality: M.personality,
         recent,
@@ -573,7 +605,7 @@ export function PetApp() {
       }
       const finalText = acc.trim()
         ? acc.trim().slice(0, 160)
-        : FALLBACK_LINES[Math.floor(Math.random() * FALLBACK_LINES.length)];
+        : fallbackLineFor(currentMood()) ?? FALLBACK_LINES[Math.floor(Math.random() * FALLBACK_LINES.length)];
       if (acc.trim()) {
         if (memory) void bridge.memoryMark(memory.id).catch(() => {});
       } else {
@@ -643,6 +675,9 @@ export function PetApp() {
     M.curDurMs = durMs ?? 2400;
   }, []);
 
+  /** 从当前动画池按权重抽一个槽位动作；平台新增同类素材会自动参与轮换。 */
+  const pickSlot = useCallback((slot: AnimSlot) => pickWeighted(catRef.current, slot), []);
+
   const handleVideoFailure = useCallback(
     (src: string) => {
       void bridge.diagLog(`video fail src=${src}`).catch(() => {});
@@ -660,30 +695,45 @@ export function PetApp() {
 
   const chainNext = useCallback(() => {
     if (M.sleeping) {
-      playAnim(catRef.current.sleep, 15000);
+      const rest = schedulerRef.current.animationFor(
+        catRef.current,
+        "sleep",
+        M.sceneMode,
+        behaviorSnapshot(),
+      );
+      playAnim(rest?.name ?? pickSlot("sleep"), rest?.durMs ?? 15000);
       return;
     }
     if (effectiveIdleMs() > 8 * 60 * 1000) {
       M.sleeping = true;
-      playAnim(catRef.current.sleep, 15000);
+      const rest = schedulerRef.current.animationFor(
+        catRef.current,
+        "sleep",
+        M.sceneMode,
+        behaviorSnapshot(),
+      );
+      playAnim(rest?.name ?? pickSlot("sleep"), rest?.durMs ?? 15000);
       return;
     }
     // 所有动画都由统一调度器决定：睡觉/专注/DSH/交互/场景/环境随机使用同一优先级。
-    const decision = behaviorDecision();
+    const snapshot = behaviorSnapshot();
+    const decision = schedulerRef.current.decision(snapshot);
     const next = schedulerRef.current.animationFor(
       catRef.current,
       decision.priority,
       M.sceneMode,
+      snapshot,
     );
     if (!next) return;
     if (decision.priority === "ambient" && M.sceneMode === "auto") {
       // 走动动作随机换朝向；待机/动作保持原朝向。
-      if (next.name !== catRef.current.idle && next.name !== catRef.current.turn) {
+      const stillNames = [...catRef.current.variants.idle, ...catRef.current.variants.turn].map((v) => v.name);
+      if (!stillNames.includes(next.name)) {
         M.facing = Math.random() < 0.5 ? -1 : 1;
       }
     }
     playAnim(next.name, next.durMs);
-  }, [behaviorDecision, playAnim]);
+  }, [behaviorSnapshot, pickSlot, playAnim]);
 
   /** 好感度变化统一入口：同时检查关系阶段升级，阶段只升不降。 */
   const changeAffinity = useCallback(
@@ -714,11 +764,11 @@ export function PetApp() {
   const wakeUp = useCallback(() => {
     if (!M.sleeping) return;
     M.sleeping = false;
-    playAnim(catRef.current.wake, 2200);
+    playAnim(pickSlot("wake"), 2200);
     spawnParticles(["💤", "✨"], 5, ["#a0c4ff", "#ffd6a5"]);
     beep("wake", { soundOn: M.soundOn, muted: M.muted });
     sayRef.current("wake");
-  }, [playAnim, spawnParticles]);
+  }, [pickSlot, playAnim, spawnParticles]);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -762,7 +812,7 @@ export function PetApp() {
           pi.moved = true;
           pi.dir = dx >= 0 ? 1 : -1;
           M.strokeState = null;
-          playAnim(catRef.current.drag, 6000);
+          playAnim(pickSlot("drag"), 6000);
           M.dragging = true;
           return;
         }
@@ -809,7 +859,7 @@ export function PetApp() {
       if (M.strokeState.revs >= 2) {
         M.strokeState = null;
         M.idleSinceMs = Date.now();
-        const clickAnim = pick2(catRef.current.clicks);
+        const clickAnim = pickSlot("click");
         playAnim(clickAnim, 2600);
         changeAffinity(2);
         touchNight();
@@ -820,7 +870,7 @@ export function PetApp() {
         sayRef.current("pet", "摸");
       }
     },
-    [changeAffinity, playAnim, bumpAch, bumpDay],
+    [changeAffinity, pickSlot, playAnim, bumpAch, bumpDay],
   );
 
   const onPointerUp = useCallback(
@@ -838,12 +888,12 @@ export function PetApp() {
           ai_adjustPersonality(-0.5);
           sayRef.current("drag");
         }
-        playAnim(catRef.current.idle, 2400);
+        playAnim(pickSlot("idle"), 2400);
         refreshState();
         return;
       }
       if (pi.isLong) {
-        playAnim(catRef.current.idle, 2400);
+        playAnim(pickSlot("idle"), 2400);
         return;
       }
       // 单击/双击/连戳：双击不先触发单击（延迟单击到 350ms 双击窗口之后），连戳用滑动窗口计数
@@ -862,7 +912,7 @@ export function PetApp() {
       if (dt < 350 && M.clickTimer) {
         clearTimeout(M.clickTimer);
         M.clickTimer = null;
-        playAnim(catRef.current.celebrate, 3400);
+        playAnim(pickSlot("celebrate"), 3400);
         beep("celebrate", { soundOn: M.soundOn, muted: M.muted });
         sayRef.current("double-click");
         return;
@@ -871,7 +921,7 @@ export function PetApp() {
       if (M.eggClickCount >= 10) {
         M.eggClickCount = 0;
         M.eggClickMs = nowEgg;
-        playAnim("原地左转奔跑", 3000);
+        playAnim(pickSlot("move"), 3000);
         spawnParticles(["💢", "💥", "🔥"], 8, ["#ff6b6b", "#ffd93d"]);
         sayRef.current("egg-poke");
         return;
@@ -895,20 +945,22 @@ export function PetApp() {
           beep("pet", { soundOn: M.soundOn, muted: M.muted });
           bumpAch("pet");
           bumpDay("pet");
+          changeMood("happy", 120_000, true);
           sayRef.current("pet", "摸头");
         } else if (ry > 0.67) {
           // 摸尾巴
-          playAnim("原地左转奔跑", 2600);
+          playAnim(pickSlot("move"), 2600);
           changeAffinity(2);
           touchNight();
           ai_adjustPersonality(0.5);
           beep("pet", { soundOn: M.soundOn, muted: M.muted });
           bumpAch("pet");
           bumpDay("pet");
+          changeMood("shy", 90_000, true);
           sayRef.current("pet", "摸尾巴");
         } else {
           // 戳身体
-          const clickAnim = pick2(catRef.current.clicks);
+          const clickAnim = pickSlot("click");
           playAnim(clickAnim, 2400);
           changeAffinity(-1);
           touchNight();
@@ -917,15 +969,14 @@ export function PetApp() {
           bumpAch("poke");
           bumpDay("poke");
           if (M.pokeCount % 4 === 0) {
-            M.mood = "angry";
-            M.moodUntilMs = Date.now() + 30_000;
+            changeMood("angry", 30_000, true);
           }
           sayRef.current("roast");
         }
         refreshState();
       }, 350);
     },
-    [changeAffinity, playAnim, bumpAch, bumpDay, spawnParticles, refreshState],
+    [changeAffinity, changeMood, pickSlot, playAnim, bumpAch, bumpDay, spawnParticles, refreshState],
   );
 
   // 长按定时
@@ -933,13 +984,13 @@ export function PetApp() {
     const t = setInterval(() => {
       if (M.pressInfo && !M.pressInfo.moved && !M.pressInfo.isLong && Date.now() - M.pressInfo.t >= 600) {
         M.pressInfo.isLong = true;
-        playAnim(catRef.current.stretch, 3000);
+        playAnim(pickSlot("stretch"), 3000);
         beep("longpress", { soundOn: M.soundOn, muted: M.muted });
         sayRef.current("long-press");
       }
     }, 200);
     return () => clearInterval(t);
-  }, [playAnim]);
+  }, [pickSlot, playAnim]);
 
   // -------------------------------------------------------------------------
   // 菜单 / 投喂 / 专注
@@ -974,9 +1025,10 @@ export function PetApp() {
     beep("feed", { soundOn: M.soundOn, muted: M.muted });
     bumpAch("feed");
     bumpDay("feed");
+    changeMood("happy", 5 * 60_000, true);
     sayRef.current("feed");
     refreshState();
-  }, [changeAffinity, playAnim, bumpAch, bumpDay, refreshState]);
+  }, [changeAffinity, changeMood, playAnim, bumpAch, bumpDay, refreshState]);
 
   const startFocus = useCallback(() => {
     setMenuOpen(false);
@@ -985,9 +1037,9 @@ export function PetApp() {
     M.focusEndsAt = M.focusStartMs + 25 * 60_000;
     setFocusEndsAt(M.focusEndsAt);
     setFocusSecs(25 * 60);
-    playAnim(catRef.current.focus, 5000);
+    playAnim(pickSlot("focus"), 5000);
     sayRef.current("focus-start");
-  }, [playAnim]);
+  }, [pickSlot, playAnim]);
 
   const resetPosition = useCallback(async () => {
     setMenuOpen(false);
@@ -1013,6 +1065,7 @@ export function PetApp() {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     schedulerRef.current.noteInteraction();
+    changeMood("curious", 60_000);
     setChatInput("");
     setChatLoading(true);
     const userTurn: ChatTurn = { role: "user", text };
@@ -1082,7 +1135,7 @@ export function PetApp() {
         });
     }
     setChatLoading(false);
-  }, [chatInput, chatLoading, chatHistory, bumpAch, bumpDay]);
+  }, [chatInput, chatLoading, chatHistory, bumpAch, bumpDay, changeMood]);
 
   // -------------------------------------------------------------------------
   // 日记 / 记忆
@@ -1401,6 +1454,11 @@ export function PetApp() {
       M.petPos = pp;
       setPetPos(pp);
       M.affinity = typeof st.affinity === "number" ? (st.affinity as number) : 50;
+      M.mood = normalizeMood(typeof st.mood === "string" ? st.mood : "normal");
+      M.moodUntilMs =
+        typeof st.moodUntilMs === "number" && Number.isFinite(st.moodUntilMs) && st.moodUntilMs > 0
+          ? st.moodUntilMs
+          : 0;
       const relationSaved = loadJson<{ stageId?: unknown }>(LS.relation, {});
       const relationStored = RELATION_STAGES.find((stage) => stage.id === relationSaved.stageId);
       const relationPotential = relationStageFor(M.affinity);
@@ -1556,6 +1614,19 @@ export function PetApp() {
     return () => clearInterval(t);
   }, [behaviorDecision]);
 
+  // 心情 tick（60s）：事件心情过期后回退到基线（深夜困倦 / 久未互动无聊）。
+  useEffect(() => {
+    const t = setInterval(() => {
+      const before = M.mood;
+      currentMood();
+      if (M.mood !== before) {
+        void bridge.diagLog(`mood baseline -> ${M.mood}`).catch(() => {});
+        refreshState();
+      }
+    }, 60_000);
+    return () => clearInterval(t);
+  }, [refreshState]);
+
   // DSH 检测（15s）
   useEffect(() => {
     let baseline = 0;
@@ -1570,6 +1641,7 @@ export function PetApp() {
         setDsHealth(r);
         M.busyFlag = r.busy;
         if (r.event || r.busy) schedulerRef.current.noteDshEvent();
+        if (r.event === "assistant") changeMood("curious", 45_000);
         if (!M.muted && !M.hidden && !M.sleeping && !M.focusFlag) {
           if (r.event === "assistant") sayAmbientRef.current("assistant");
           else if (r.event === "user") sayAmbientRef.current("user");
@@ -1585,16 +1657,18 @@ export function PetApp() {
           if (ev.kind === "done") {
             baseline += 1;
             bumpDay("taskDone");
+            changeMood("happy", 3 * 60_000, true);
             sayAmbientRef.current("task-done", ev.title);
           } else if (ev.kind === "failed") {
             bumpDay("taskFailed");
+            changeMood("sad", 3 * 60_000);
             sayAmbientRef.current("task-failed", ev.title);
           }
         }
       });
     }, 15_000);
     return () => clearInterval(t);
-  }, [bumpDay]);
+  }, [bumpDay, changeMood]);
 
   // 资源平台：启动时拉 manifest 动态构建动画池（上传即学会新动作）+ 定期探测在线状态。
   // 离线时 playAnim 会直接使用内置动画，避免视频 404 造成的闪烁。
@@ -1607,7 +1681,16 @@ export function PetApp() {
           if (!alive) return;
           M.assetsOnline = !!r.online;
           setAssetsOnline(M.assetsOnline);
-          if (r.online && r.items.length) catRef.current = buildAnimPool(r.items);
+          if (r.online && r.items.length) {
+            catRef.current = buildAnimPool(r.items);
+            const variants = Object.values(catRef.current.variants).flat();
+            const tagged = variants.filter((v) => v.tags.some((t) => /^(scene|time|mood):/.test(t))).length;
+            const sig = `${variants.length}:${tagged}`;
+            if (sig !== poolDiagRef.current) {
+              poolDiagRef.current = sig;
+              void bridge.diagLog(`anim pool variants=${variants.length} semanticTags=${tagged}`).catch(() => {});
+            }
+          }
         })
         .catch(() => {
           if (!alive) return;
@@ -1638,19 +1721,19 @@ export function PetApp() {
           break;
         case "sleep":
           M.sleeping = true;
-          playAnim(catRef.current.sleep, 4000);
+          playAnim(pickSlot("sleep"), 4000);
           break;
         case "wake":
           wakeUp();
           break;
         case "celebrate":
-          playAnim(catRef.current.celebrate, 3400);
+          playAnim(pickSlot("celebrate"), 3400);
           break;
         case "stretch":
-          playAnim(catRef.current.stretch, 3000);
+          playAnim(pickSlot("stretch"), 3000);
           break;
         case "focus":
-          playAnim(catRef.current.focus, 5000);
+          playAnim(pickSlot("focus"), 5000);
           break;
         case "set_state": {
           const key = p.key;
@@ -1714,7 +1797,7 @@ export function PetApp() {
           break;
       }
     },
-    [playAnim, wakeUp, refreshState, applyTheme],
+    [pickSlot, playAnim, wakeUp, refreshState, applyTheme],
   );
 
   // 遥控命令轮询（5s）：从平台拉命令 → 执行 → 回执
@@ -1755,7 +1838,7 @@ export function PetApp() {
           affinity: Math.round(M.affinity),
           sass: Math.round(M.sass),
           personality: Math.round(M.personality),
-          mood: M.mood,
+          mood: currentMood(),
           dshOnline: s.dshOnline,
           today: s.dayStats,
           scene: M.sceneMode,
@@ -1831,11 +1914,11 @@ export function PetApp() {
       if (M.muted || M.hidden || M.sleeping || M.focusFlag) return;
       if (proactiveSpeechBlocked()) return;
       M.lastSitRemindMs = Date.now();
-      playAnim(catRef.current.stretch, 3000);
+      playAnim(pickSlot("stretch"), 3000);
       sayRef.current("sitting");
     }, 60_000);
     return () => clearInterval(t);
-  }, [playAnim]);
+  }, [pickSlot, playAnim]);
 
   // 关心（5min 检查）
   useEffect(() => {
@@ -1867,7 +1950,7 @@ export function PetApp() {
         M.period = p;
         if (p === "night") {
           M.sleeping = true;
-          playAnim(catRef.current.sleep, 4000);
+          playAnim(pickSlot("sleep"), 4000);
         } else if (M.sleeping) {
           wakeUp();
         }
@@ -1885,7 +1968,7 @@ export function PetApp() {
     doPeriod();
     const t = setInterval(doPeriod, 60_000);
     return () => clearInterval(t);
-  }, [playAnim, wakeUp]);
+  }, [pickSlot, playAnim, wakeUp]);
 
   // 生日/节日（60s）
   useEffect(() => {
@@ -2060,12 +2143,12 @@ export function PetApp() {
         setFocusEndsAt(null);
         bumpDay("focusMin", 25);
         bumpAch("focus");
-        playAnim(catRef.current.celebrate, 3400);
+        playAnim(pickSlot("celebrate"), 3400);
         sayRef.current("focus-done");
       }
     }, 1000);
     return () => clearInterval(t);
-  }, [focusEndsAt, playAnim, bumpDay, bumpAch]);
+  }, [focusEndsAt, pickSlot, playAnim, bumpDay, bumpAch]);
 
   // 气泡打字机（22ms）：仅「从无气泡 → 有气泡」第一次逐字；流式分片/连续触发时直接整段替换，
   // 避免每个分片都清空重打造成的「一下显示一下消失」闪烁。
@@ -2152,7 +2235,7 @@ export function PetApp() {
             M.pressInfo = null;
             M.strokeState = null;
             M.dragging = false;
-            playAnim(catRef.current.idle, 2400);
+            playAnim(pickSlot("idle"), 2400);
           }}
           onContextMenu={(e) => {
             e.preventDefault();

@@ -26,6 +26,11 @@ pub struct AssetsItem {
     pub file: String,
     pub name: String,
     pub category: String,
+    /// 平台配置的抽取权重（0 = 停用，100 = 默认）。
+    pub weight: u32,
+    /// 语义标签（scene:work / mood:happy / cooldown:180 ...）。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
 }
@@ -57,7 +62,10 @@ struct ManifestItemRaw {
     file: Option<String>,
     name: Option<String>,
     category: Option<String>,
+    weight: Option<u32>,
     sha256: Option<String>,
+    #[serde(default)]
+    tags: Option<Vec<String>>,
 }
 
 struct ManifestCache {
@@ -166,6 +174,21 @@ async fn fetch_manifest(cfg: &Config) -> Result<(String, Vec<AssetsItem>), Strin
                 file,
                 name,
                 category: if category.is_empty() { "act".into() } else { category },
+                weight: i.weight.unwrap_or(100).min(1000),
+                tags: i
+                    .tags
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|tag| tag.trim().to_ascii_lowercase())
+                    .filter(|tag| {
+                        !tag.is_empty()
+                            && tag.len() <= 64
+                            && tag.chars().all(|c| {
+                                c.is_ascii_alphanumeric() || matches!(c, ':' | '_' | '-' | '.')
+                            })
+                    })
+                    .take(16)
+                    .collect(),
                 sha256: i.sha256.filter(|s| {
                     s.len() >= 16 && s.len() <= 128 && s.chars().all(|c| c.is_ascii_hexdigit())
                 }),

@@ -9,6 +9,7 @@ export const CATEGORIES = [
   'idle', 'turn', 'move', 'click', 'drag', 'sleep', 'wake', 'focus', 'celebrate', 'stretch', 'act',
 ]
 const MAX_UPLOAD = 6 * 1024 * 1024
+const CATEGORY_SET = new Set(CATEGORIES)
 
 export function videosDir(cfg) {
   return path.join(cfg.assetsDir, 'videos')
@@ -27,6 +28,27 @@ export function safeVideoFile(name) {
   if (decoded.includes('/') || decoded.includes('\\') || decoded.includes('..') || decoded.includes('\0')) return null
   if (decoded.length > 200) return null
   return decoded
+}
+
+/** 从文件名解析分类、显示名和权重。
+ *  约定：`{category}__{name}.webm`，可选 `@w120` 权重后缀。
+ *  没有前缀的老素材保持原行为（act），保证向后兼容。 */
+export function parseAssetMeta(file) {
+  const stem = String(file || '').replace(/\.webm$/i, '')
+  let category = 'act'
+  let name = stem
+  const prefixed = /^([a-z]+)__(.+)$/.exec(stem)
+  if (prefixed && CATEGORY_SET.has(prefixed[1])) {
+    category = prefixed[1]
+    name = prefixed[2]
+  }
+  let weight = 100
+  const weighted = /@w(\d{1,4})$/.exec(name)
+  if (weighted) {
+    weight = Math.max(0, Math.min(1000, Number(weighted[1])))
+    name = name.slice(0, weighted.index).trim()
+  }
+  return { category, name: name || stem, weight }
 }
 
 export function listResources() {
@@ -60,15 +82,16 @@ export function uploadResource(cfg, fileName, data, category, user, req) {
   fs.renameSync(tmp, dest)
   const size = data.length
   const sum = sha256Hex(data)
-  const cat = category || 'act'
-  const name = file.replace(/\.webm$/, '')
+  const meta = parseAssetMeta(file)
+  const cat = category && CATEGORIES.includes(category) ? category : meta.category
+  const name = meta.name
   getDb()
     .prepare(
-      'INSERT INTO resources (name, file, size, sha256, mime, category, tags, enabled, weight, created_at, updated_at) VALUES (?,?,?,?,?,?,?,1,100,?,?)',
+      'INSERT INTO resources (name, file, size, sha256, mime, category, tags, enabled, weight, created_at, updated_at) VALUES (?,?,?,?,?,?,?,1,?,?,?)',
     )
-    .run(name, file, size, sum, 'video/webm', cat, '[]', nowMs(), nowMs())
+    .run(name, file, size, sum, 'video/webm', cat, '[]', meta.weight, nowMs(), nowMs())
   audit(user.id, 'upload', file, { size, category: cat }, req)
-  return { ok: true, item: { name, file, size, sha256: sum, mime: 'video/webm', category: cat, tags: [] } }
+  return { ok: true, item: { name, file, size, sha256: sum, mime: 'video/webm', category: cat, tags: [], weight: meta.weight } }
 }
 
 export function deleteResource(cfg, name, user, req) {
@@ -104,7 +127,8 @@ export function patchResource(cfg, name, body, user, req) {
   let finalFile = row.file
   let finalName = row.name
   if (typeof b.name === 'string' && b.name.trim() && b.name.trim() !== row.name) {
-    const nf = safeVideoFile(b.name.trim() + '.webm')
+    const displayName = b.name.trim().replace(/^[a-z]+__/, '')
+    const nf = safeVideoFile(`${category}__${displayName}.webm`)
     if (!nf) return { status: 400, error: 'invalid name' }
     const dup = getDb().prepare('SELECT id FROM resources WHERE file = ? AND id != ?').get(nf, row.id)
     if (dup) return { status: 409, error: 'name exists' }
@@ -114,7 +138,7 @@ export function patchResource(cfg, name, body, user, req) {
       return { status: 500, error: 'rename failed: ' + e.message }
     }
     finalFile = nf
-    finalName = nf.replace(/\.webm$/, '')
+    finalName = displayName
   }
   let finalEnabled = row.enabled
   if (typeof b.enabled === 'boolean') finalEnabled = b.enabled ? 1 : 0
@@ -145,9 +169,10 @@ export function rebuild(cfg, user, req) {
     const sum = sha256Hex(data)
     const rec = existing.get(f)
     if (!rec) {
+      const meta = parseAssetMeta(f)
       db.prepare(
-        'INSERT INTO resources (name, file, size, sha256, mime, category, tags, enabled, weight, created_at, updated_at) VALUES (?,?,?,?,?,?,?,1,100,?,?)',
-      ).run(f.replace(/\.webm$/, ''), f, stat.size, sum, 'video/webm', 'act', '[]', nowMs(), nowMs())
+        'INSERT INTO resources (name, file, size, sha256, mime, category, tags, enabled, weight, created_at, updated_at) VALUES (?,?,?,?,?,?,?,1,?,?,?)',
+      ).run(meta.name, f, stat.size, sum, 'video/webm', meta.category, '[]', meta.weight, nowMs(), nowMs())
       added++
     } else if (rec.sha256 !== sum) {
       db.prepare('UPDATE resources SET sha256 = ?, size = ?, updated_at = ? WHERE id = ?').run(sum, stat.size, nowMs(), rec.id)

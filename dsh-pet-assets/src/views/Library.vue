@@ -37,6 +37,23 @@ const batchCategory = ref('')
 const batchTagsVisible = ref(false)
 const batchTags = ref([])
 
+// 调度器识别的语义标签预设；仍允许手动输入任意 key:value。
+const TAG_PRESETS = [
+  'scene:work', 'scene:rest', 'scene:meal', 'scene:night',
+  'time:morning', 'time:day', 'time:evening', 'time:night', 'time:weekend',
+  'mood:happy', 'mood:calm', 'mood:sad', 'mood:bored',
+  'mood:angry', 'mood:shy', 'mood:tired', 'mood:curious',
+  'cooldown:120', 'cooldown:300',
+]
+
+const tagOptions = computed(() => {
+  const all = new Set(TAG_PRESETS)
+  for (const it of items.value) for (const t of parseTags(it)) if (!t.startsWith('src:')) all.add(t)
+  for (const t of editTags.value) if (!t.startsWith('src:')) all.add(t)
+  for (const t of batchTags.value) if (!t.startsWith('src:')) all.add(t)
+  return [...all]
+})
+
 const filtered = computed(() => {
   let list = items.value.slice()
   if (catFilter.value) list = list.filter((i) => i.category === catFilter.value)
@@ -312,8 +329,11 @@ onMounted(() => {
             style="width: 100%"
             placeholder="输入后回车添加"
           >
-            <el-option v-for="t in editTags" :key="t" :label="t" :value="t" />
+            <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
           </el-select>
+          <div style="margin-top: 6px; font-size: 12px; color: var(--el-text-color-secondary)">
+            调度器识别 scene / time / mood / cooldown；没有语义标签的素材仍会正常播放。
+          </div>
         </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="editEnabled" active-text="上线" inactive-text="下线" />
@@ -385,7 +405,7 @@ onMounted(() => {
         style="width: 100%"
         placeholder="输入后回车添加标签"
       >
-        <el-option v-for="t in batchTags" :key="t" :label="t" :value="t" />
+        <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
       </el-select>
       <template #footer>
         <el-button @click="batchTagsVisible = false">取消</el-button>

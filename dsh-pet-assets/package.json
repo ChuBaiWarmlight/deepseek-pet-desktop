@@ -6,6 +6,9 @@
   "description": "dsh-pet 资源管理平台（独立轻量本地服务 + 管理员登录 + SQLite）",
   "scripts": {
     "start": "node server.mjs",
+    "ingest": "python scripts/ingest_video.py",
+    "tag": "python scripts/tag_assets.py",
+    "import:videos": "node scripts/import-videos.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

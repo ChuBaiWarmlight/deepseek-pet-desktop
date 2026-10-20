@@ -2,6 +2,7 @@
 // 这里只产出 system/user（及 temperature），实际调用统一走 bridge.llmComplete。
 
 import type { ChatTurn, Memory } from "./types";
+import { moodPromptLine } from "./mood";
 
 export const SAY_MODES = [
   "roast",
@@ -101,10 +102,7 @@ function sassLine(s: number): string {
 }
 
 function moodLine(m: string): string {
-  if (m === "happy") return "你现在心情很好、有点开心，语气软一点、更愿意撒娇和露馅式地关心。";
-  if (m === "angry") return "你现在有点不耐烦、被主人惹毛了，语气更冲更傲娇，但别真的伤人。";
-  if (m === "sleepy") return "你现在很困、迷迷糊糊的，语气慵懒、带着困意，说话慢吞吞的。";
-  return "";
+  return moodPromptLine(m);
 }
 
 function sayAsk(mode: string, topic: string, memory: string | null | undefined): string {
