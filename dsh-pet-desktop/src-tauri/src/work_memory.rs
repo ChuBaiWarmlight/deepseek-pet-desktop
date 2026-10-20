@@ -17,7 +17,7 @@ pub struct ProjectSlice {
     pub events: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DayDigest {
     pub date: String,
@@ -210,8 +210,14 @@ fn digest_line(digest: &DayDigest) -> String {
 }
 
 pub fn profile(days_back: usize) -> WorkProfile {
+    use chrono::{Duration, Local};
     let limit = days_back.clamp(1, 120);
-    let mut digests: Vec<DayDigest> = timeline::days(limit)
+    let today = Local::now().date_naive();
+    // 按自然日回溯，避免把几个月前的历史工作算进「最近 N 天」。
+    let day_list: Vec<String> = (0..limit)
+        .map(|offset| (today - Duration::days(offset as i64)).format("%Y-%m-%d").to_string())
+        .collect();
+    let mut digests: Vec<DayDigest> = day_list
         .into_iter()
         .filter_map(|day| digest(&day).ok())
         .filter(|d| d.events > 0)
@@ -296,6 +302,13 @@ pub fn text(days_back: usize) -> String {
         .take(3)
         .map(digest_line)
         .collect();
+    // 最近一天在改哪些文件（只有路径，没有内容）。
+    if let Some(day) = profile.recent.first().map(|d| d.date.clone()) {
+        let files = crate::task_card::recent_files(&day, 5);
+        if !files.is_empty() {
+            lines.push(format!("最近在改：{}", files.join("、")));
+        }
+    }
     if !profile.summary.is_empty() {
         lines.push(format!("长期习惯：{}", profile.summary));
     }

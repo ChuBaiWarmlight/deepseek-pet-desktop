@@ -316,6 +316,29 @@ pub fn summarize(events: &[AgentEvent], date: &str) -> TimelineSummary {
     }
 }
 
+/// 删除超过保留期的按天文件；返回删除数量。
+pub fn prune(keep_days: usize) -> usize {
+    use chrono::{Duration, Local, NaiveDate};
+    // keep_days 包含今天：保留 90 天时，最早保留「今天 - 89 天」。
+    let cutoff = Local::now().date_naive() - Duration::days(keep_days.max(1) as i64 - 1);
+    let mut removed = 0usize;
+    if let Ok(entries) = fs::read_dir(timeline_dir()) {
+        for entry in entries.filter_map(Result::ok) {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let Some(stem) = name.strip_suffix(".jsonl") else {
+                continue;
+            };
+            let Ok(date) = NaiveDate::parse_from_str(stem, "%Y-%m-%d") else {
+                continue;
+            };
+            if date < cutoff && fs::remove_file(entry.path()).is_ok() {
+                removed += 1;
+            }
+        }
+    }
+    removed
+}
+
 #[tauri::command]
 pub fn agent_timeline(day: Option<String>, limit: Option<usize>) -> Result<Vec<AgentEvent>, String> {
     let day = day.unwrap_or_else(today);

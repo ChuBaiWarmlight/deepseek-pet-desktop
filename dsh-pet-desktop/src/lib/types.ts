@@ -274,6 +274,45 @@ export interface WorkProfile {
   summary: string;
 }
 
+export interface WorkToolUse {
+  name: string;
+  count: number;
+}
+
+export interface WorkTaskCard {
+  provider: string;
+  sessionId: string;
+  project: string;
+  cwd: string;
+  startTs: number;
+  endTs: number;
+  minutes: number;
+  events: number;
+  approvals: number;
+  failures: number;
+  completed: boolean;
+  tools: WorkToolUse[];
+  files: string[];
+}
+
+export interface WorkReport {
+  period: string;
+  date: string;
+  title: string;
+  markdown: string;
+  generatedAt: number;
+}
+
+export interface WorkFocusState {
+  working: boolean;
+  sinceTs: number;
+  continuousMinutes: number;
+  idleMinutes: number;
+  needsBreak: boolean;
+  pendingApprovals: number;
+  providers: string[];
+}
+
 export interface PetHeartbeat {
   name: string;
   affinity: number;

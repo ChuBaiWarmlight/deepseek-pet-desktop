@@ -1,9 +1,17 @@
 // 工作搭子面板：本机事件总线信息、手动模拟器、最近事件时间线。
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
 import { agentDetail, agentHeadline, agentIsFailure, agentKindLabel, agentProviderLabel } from "../lib/agent";
-import type { AgentEvent, AgentEventInput, AgentHubInfo } from "../lib/types";
+import { bridge } from "../lib/bridge";
+import type {
+  AgentEvent,
+  AgentEventInput,
+  AgentHubInfo,
+  WorkFocusState,
+  WorkReport,
+  WorkTaskCard,
+} from "../lib/types";
 import { PanelHead } from "./PanelHead";
 
 interface AgentPanelProps {
@@ -56,11 +64,84 @@ function fmtTime(ts: number): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function fmtDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} 分钟`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours} 小时 ${rest} 分` : `${hours} 小时`;
+}
+
+function toolTotal(card: WorkTaskCard): number {
+  return card.tools.reduce((sum, tool) => sum + tool.count, 0);
+}
+
 export function AgentPanel(props: AgentPanelProps) {
   const p = props;
   const drag = usePanelDrag(p.anchor);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
+  const [focusState, setFocusState] = useState<WorkFocusState | null>(null);
+  const [cards, setCards] = useState<WorkTaskCard[]>([]);
+  const [report, setReport] = useState<WorkReport | null>(null);
+  const [reportPeriod, setReportPeriod] = useState<"day" | "week">("day");
+  const [reportBusy, setReportBusy] = useState(false);
+  const lastRefreshRef = useRef(0);
+
+  const refreshWork = useCallback(async () => {
+    const [nextFocus, nextCards] = await Promise.all([
+      bridge.workFocusState().catch(() => null),
+      bridge.workTaskCards().catch(() => [] as WorkTaskCard[]),
+    ]);
+    if (nextFocus) setFocusState(nextFocus);
+    setCards(nextCards);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      void refreshWork().catch(() => {
+        if (alive) setMessage("读取工作数据失败");
+      });
+    };
+    load();
+    const timer = setInterval(load, 15_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [refreshWork]);
+
+  // 新事件到达时立即刷新，不必等 15 秒轮询。
+  const latestEventId = p.events[0]?.id ?? "";
+  useEffect(() => {
+    const now = Date.now();
+    // 工具调用可能很密集，任务卡需要读当天 JSONL；最多 5 秒刷新一次。
+    if (now - lastRefreshRef.current < 5_000) return;
+    lastRefreshRef.current = now;
+    void refreshWork().catch(() => {});
+  }, [latestEventId, refreshWork]);
+
+  const generateReport = async () => {
+    setReportBusy(true);
+    try {
+      const next = await bridge.workReport(reportPeriod);
+      setReport(next);
+      setMessage(reportPeriod === "day" ? "已生成今日日报" : "已生成近 7 天周报");
+    } catch (error) {
+      setMessage(`生成报告失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setReportBusy(false);
+    }
+  };
+
+  const exportReport = async () => {
+    try {
+      const path = await bridge.workReportExport(reportPeriod);
+      setMessage(`已导出：${path}`);
+    } catch (error) {
+      setMessage(`导出失败：${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const copy = async (text: string, label: string) => {
     try {
@@ -124,6 +205,90 @@ export function AgentPanel(props: AgentPanelProps) {
             </>
           )}
         </div>
+
+        <div className="dsh-vpet-agent-section-title">专注状态</div>
+        <div className={"dsh-vpet-agent-hub" + (focusState?.working ? " is-online" : "")}>
+          <div className="dsh-vpet-agent-hub-row">
+            <span className="dsh-vpet-agent-dot" />
+            <strong>
+              {focusState?.working
+                ? `工作中 · 连续 ${fmtDuration(focusState.continuousMinutes)}`
+                : focusState && focusState.idleMinutes > 0
+                  ? `休息中 · 已空闲 ${fmtDuration(focusState.idleMinutes)}`
+                  : "还没有工作事件"}
+            </strong>
+          </div>
+          {focusState && focusState.working && (
+            <div className="dsh-vpet-agent-mono">
+              {focusState.needsBreak
+                ? "已经连续工作 90 分钟，起来活动一下。"
+                : `这段连续工作从 ${fmtTime(focusState.sinceTs)} 开始`}
+            </div>
+          )}
+          {focusState && focusState.pendingApprovals > 0 && (
+            <div className="dsh-vpet-settings-hint">有 {focusState.pendingApprovals} 个任务在等你确认</div>
+          )}
+        </div>
+
+        <div className="dsh-vpet-agent-section-title">今日任务卡（{cards.length}）</div>
+        <div className="dsh-vpet-agent-events">
+          {cards.length === 0 && (
+            <div className="dsh-vpet-settings-hint">今天还没有任务卡。接入 Claude Code / Codex 后会自动按会话生成。</div>
+          )}
+          {cards.slice(0, 8).map((card) => (
+            <div key={`${card.provider}-${card.sessionId}`} className="dsh-vpet-agent-event">
+              <div className="dsh-vpet-agent-event-head">
+                <span className="dsh-vpet-agent-event-provider">{agentProviderLabel(card.provider)}</span>
+                <span className="dsh-vpet-agent-event-kind">{card.completed ? "已完成" : "进行中"}</span>
+                <span className="dsh-vpet-agent-event-time">{fmtDuration(card.minutes)}</span>
+              </div>
+              <div className="dsh-vpet-agent-event-title">{card.project || "未命名项目"}</div>
+              <div className="dsh-vpet-agent-event-detail">
+                {fmtTime(card.startTs)} - {fmtTime(card.endTs)} · 工具 {toolTotal(card)} 次
+                {card.failures > 0 ? ` · 失败 ${card.failures} 次` : ""}
+                {card.approvals > 0 ? ` · 确认 ${card.approvals} 次` : ""}
+              </div>
+              {card.tools.length > 0 && (
+                <div className="dsh-vpet-agent-event-detail">
+                  工具：{card.tools.map((tool) => `${tool.name}×${tool.count}`).join("、")}
+                </div>
+              )}
+              {card.files.length > 0 && (
+                <div className="dsh-vpet-agent-event-detail">
+                  文件：{card.files.slice(0, 3).join("、")}
+                  {card.files.length > 3 ? ` 等 ${card.files.length} 个` : ""}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="dsh-vpet-agent-section-title">工作汇报</div>
+        <div className="dsh-vpet-agent-actions">
+          <select
+            className="dsh-vpet-name-input"
+            value={reportPeriod}
+            onChange={(e) => setReportPeriod(e.target.value === "week" ? "week" : "day")}
+            aria-label="选择报告周期"
+          >
+            <option value="day">今日日报</option>
+            <option value="week">近 7 天周报</option>
+          </select>
+          <button className="dsh-vpet-settings-btn" type="button" disabled={reportBusy} onClick={() => void generateReport()}>
+            {reportBusy ? "生成中…" : "生成"}
+          </button>
+          <button className="dsh-vpet-settings-btn" type="button" disabled={reportBusy} onClick={() => void exportReport()}>
+            导出 Markdown
+          </button>
+        </div>
+        {report && (
+          <div className="dsh-vpet-agent-event">
+            <div className="dsh-vpet-agent-event-title">{report.title}</div>
+            <div className="dsh-vpet-agent-event-detail" style={{ whiteSpace: "pre-wrap" }}>
+              {report.markdown.length > 1500 ? `${report.markdown.slice(0, 1500)}\n…` : report.markdown}
+            </div>
+          </div>
+        )}
 
         <div className="dsh-vpet-agent-section-title">手动模拟</div>
         <div className="dsh-vpet-agent-sims">

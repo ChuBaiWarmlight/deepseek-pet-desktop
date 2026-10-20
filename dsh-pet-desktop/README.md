@@ -91,3 +91,10 @@ powershell -File scripts\install-agent-hooks.ps1 -Codex
 接入后，终端里的 AI 工具会把「开始工作 / 工具调用 / 等待确认 / 测试结果 / 回合完成」等事件发给桌宠。审批事件会弹出「去看看」气泡，点击后尝试把终端或 Codex/ChatGPT 窗口切到前台。完整协议和手动接入方式见 `docs/AGENT-INTEGRATIONS.md`。
 
 接入异常时先跑 `powershell -File scripts\doctor-agent-hooks.ps1` 自检：事件总线、`claude` 是否可用、nvm 当前版本、Claude / Codex hook 是否完整，都会给出结论。
+
+工作能力包括：
+
+- **专注态**：事件驱动，10 分钟没动静自动待机，连续 90 分钟提醒起身。
+- **任务卡**：按会话汇总项目、工具分布和涉及文件（只存路径，不存内容）。
+- **工作报告**：`work_report` 生成日报 / 周报，`work_report_export` 导出 Markdown。
+- **MCP**：`http://127.0.0.1:17777/mcp?token=...`，任何支持 MCP 的工具都能上报和查询。

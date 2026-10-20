@@ -10,10 +10,13 @@ mod http;
 mod net;
 mod storage;
 mod system;
+mod task_card;
 mod timeline;
 mod tray;
 mod window;
+mod work_focus;
 mod work_memory;
+mod work_report;
 
 use tauri::Manager;
 
@@ -30,9 +33,15 @@ pub fn run() {
         .manage(storage::RecordsStore::load())
         .manage(window::HitRegions::default())
         .manage(agent_hub::AgentHub::load())
+        .manage(work_focus::WorkFocus::default())
         .setup(|app| {
+            let pruned = timeline::prune(90);
+            if pruned > 0 {
+                window::diag(&format!("timeline prune removed {pruned} day files"));
+            }
             window::setup_fullscreen(app.handle())?;
             tray::setup_tray(app.handle())?;
+            work_report::spawn_brief_scheduler(app.handle().clone());
             match app.state::<agent_hub::AgentHub>().start(app.handle().clone()) {
                 Ok(port) => window::diag(&format!("agent hub listening on 127.0.0.1:{port}")),
                 Err(e) => window::diag(&format!("agent hub start failed: {e}")),
@@ -108,6 +117,12 @@ pub fn run() {
             work_memory::work_memory_digest,
             work_memory::work_memory_profile,
             work_memory::work_memory_text,
+            // 专注态 / 任务卡 / 工作汇报
+            work_focus::work_focus_state,
+            task_card::work_task_cards,
+            work_report::work_report,
+            work_report::work_report_export,
+            work_report::work_brief,
             agent_window::focus_agent_window,
             // fs
             commands::fs::eat_file,

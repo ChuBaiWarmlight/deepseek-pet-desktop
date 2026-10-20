@@ -158,10 +158,112 @@ Invoke-RestMethod -Uri "http://127.0.0.1:$($hub.port)/api/events" `
 
 时间线只存在本机，不参与同步。后续的晨间简报、下班收尾、工作成就都从这里取数。
 
+## 专注态
+
+总线会根据事件自动判断你是否在工作，不需要额外计时器：
+
+- 任意事件到来就算「活跃」；超过 10 分钟没有事件自动回到待机。
+- 连续工作满 90 分钟，发一次 `work-break` 提醒；同一段连续工作只提醒一次。
+- 同时有 2 个以上任务在等确认时，发一次 `approval-aggregate`，不会每来一个就弹一次。
+- 审批请求 30 分钟没有结果会自动失效，不会一直挂在「待确认」里。
+- 同一 provider / 会话 / 类型 / 状态下 2 秒内重复上报的事件会去重；工具事件会把 `data` 里的文件路径一起参与比较，不会误吞不同文件的连续操作。
+
+前端可以用 `work_focus_state` 读取当前状态：
+
+```json
+{
+  "working": true,
+  "sinceTs": 1792477000000,
+  "continuousMinutes": 42,
+  "idleMinutes": 0,
+  "needsBreak": false,
+  "pendingApprovals": 1,
+  "providers": ["claude-code"]
+}
+```
+
+排障或测试脚本可以用 `POST /api/focus/reset` 清空当前连续工作段和待确认列表（需要 `X-Pet-Token`）。
+
+## 任务卡
+
+`work_task_cards(day?)` 把当天每个会话聚合成一张卡：
+
+```json
+{
+  "provider": "claude-code",
+  "sessionId": "abc",
+  "project": "deepseek-pet-desktop",
+  "startTs": 1792477000000,
+  "endTs": 1792478800000,
+  "minutes": 30,
+  "events": 42,
+  "approvals": 1,
+  "failures": 0,
+  "completed": true,
+  "tools": [{ "name": "Edit", "count": 8 }],
+  "files": ["src/PetApp.tsx", "src/pet.css"]
+}
+```
+
+文件路径来自 `PreToolUse` 的 `tool_input.file_path` / `notebook_path` / `path`，只存路径，不存文件内容。设置 `DSH_PET_CAPTURE_PATHS=0` 可以完全关闭路径采集。
+
+## 工作汇报
+
+- `work_report(period, day?)`：生成 Markdown 日报（`period=day`）或周报（`period=week`）。
+- `work_report_export(period, day?)`：写入 `%USERPROFILE%\.dsh-pet-desktop\reports\`，返回文件路径。
+- `work_brief(kind)`：`morning` 返回昨天概览 + 近 7 天习惯；`evening` 返回今天的收尾总结。
+
+桌宠会在 09:30 推晨间简报、18:30 推下班收尾；当天完全没有工作记录时不会弹，避免无意义打扰。
+
+「工作搭子」面板现在直接展示专注状态、今日任务卡和工作汇报，可以生成日报 / 周报并导出 Markdown，不必手敲命令。
+
+报告只做本地统计，不调用大模型。
+
+## MCP 接入
+
+事件总线同时是一个最小可用的 MCP server，地址：
+
+```text
+http://127.0.0.1:17777/mcp?token=<agent-hub.json 里的 token>
+```
+
+只接受 `POST`，JSON-RPC 2.0。支持的方法：`initialize`、`ping`、`tools/list`、`tools/call`。
+
+工具：
+
+| 名称 | 作用 |
+| --- | --- |
+| `report_event` | 任意 AI 工具上报事件 |
+| `work_summary` | 某天的工作摘要 + 最近 7 天习惯 |
+| `work_task_cards` | 某天的任务卡 |
+| `work_report` | 生成日报 / 周报 |
+| `work_focus` | 当前专注状态 |
+
+示例：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "work_summary",
+    "arguments": { "day": "2026-10-20" }
+  }
+}
+```
+
+Cursor / Windsurf 这类没有 hook 的工具，把上面的地址配成 MCP server，或者直接用 HTTP `POST /api/events` 上报即可。
+
+## 数据保留
+
+时间线按天保留最近 90 天，启动时自动清理更早的文件。报告文件不会被自动删除。
+
 ## 隐私边界
 
-- 默认不发送 prompt、代码、终端输出。
-- 事件只存在内存里（最近 200 条），不写入聊天记录。
+- 默认不发送 prompt、代码、终端输出，只采集工具名、文件路径等元数据。
+- 事件按天落盘到 `timeline`，保留 90 天；内存里额外保留最近 200 条。
+- 文件路径可以用 `DSH_PET_CAPTURE_PATHS=0` 完全关闭。
 - `agent-hub.json` 含本机 Token，不要提交到 Git 或分享给别人。
 - 不需要某个工具时，直接删除它对应的 hook 即可，桌宠不会受影响。
 
@@ -174,6 +276,14 @@ powershell -File scripts\doctor-agent-hooks.ps1
 ```
 
 它会检查事件总线是否在线、`claude` 是否指向真实二进制、nvm 当前版本是否装了 claude，以及 Claude / Codex 的 hook 是否完整。加 `-Deep` 会额外跑一次 `claude --version`。
+
+想确认总线、去重、专注态、任务卡、MCP 和报告整条链路是否正常，可以跑：
+
+```powershell
+powershell -File scripts\smoke-agent-hub.ps1
+```
+
+脚本会使用 `smoke-test` 这个 provider 写入测试事件，跑完自动从当天时间线删除，并重置专注态，不会污染日报。
 
 ### nvm 与 Node 版本
 

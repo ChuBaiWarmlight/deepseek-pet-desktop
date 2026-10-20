@@ -75,6 +75,9 @@ try {
     title = ""
     windowTitle = ""
   }
+  # 只采集文件路径这类元数据，不采集 prompt 和代码内容。
+  $data = @{}
+  $capturePaths = $env:DSH_PET_CAPTURE_PATHS -ne "0"
 
   $hook = Get-Field $obj "hook_event_name"
   if (-not $hook) { $hook = Get-Field $obj "hookEventName" }
@@ -103,6 +106,21 @@ try {
         $event.status = if ($tool) { "正在使用 $tool" } else { "正在调用工具" }
         $event.summary = $event.status
         $event.attention = "silent"
+        if ($capturePaths) {
+          if ($tool) { $data["tool"] = $tool }
+          $toolInputProp = $obj.PSObject.Properties["tool_input"]
+          if ($toolInputProp -and $toolInputProp.Value) {
+            $paths = @()
+            foreach ($key in @("file_path", "notebook_path", "path", "filePath")) {
+              $prop = $toolInputProp.Value.PSObject.Properties[$key]
+              if ($prop -and $prop.Value -and -not ($prop.Value -is [array])) {
+                $value = ([string]$prop.Value).Trim()
+                if ($value -and -not ($paths -contains $value)) { $paths += $value }
+              }
+            }
+            if ($paths.Count -gt 0) { $data["paths"] = @($paths | Select-Object -First 20) }
+          }
+        }
       }
       "PostToolUse" {
         $event.kind = "tool.end"
@@ -169,6 +187,7 @@ try {
     if ($obj.PSObject.Properties["ok"] -and -not $obj.ok) { $event.severity = "error" }
   }
 
+  if ($data.Count -gt 0) { $event["data"] = $data }
   $uri = "http://127.0.0.1:$port/api/events"
   $json = $event | ConvertTo-Json -Compress -Depth 6
   # Windows PowerShell 5.1 发送字符串时默认不是 UTF-8；显式转字节，避免中文状态变问号。

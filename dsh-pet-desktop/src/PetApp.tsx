@@ -776,9 +776,16 @@ export function PetApp() {
           setAgentNotice(ev);
           if (canSound) beep("click", { soundOn: M.soundOn, muted: M.muted });
           return;
-        case "notification":
+        case "notification": {
+          const text = (ev.summary || ev.title || ev.status || "").trim();
+          // 晨间/下班简报正文较长，用完整气泡而不是会被截断的 120 字提示条。
+          if (ev.provider === "dsh-pet" && text) {
+            setBubble({ text: text.slice(0, 240), ts: Date.now() });
+            return;
+          }
           setAgentNotice(ev);
           return;
+        }
         default:
           if (ev.attention !== "silent") setAgentNotice(ev);
           return;
@@ -1744,6 +1751,8 @@ export function PetApp() {
   // 工作搭子：本机事件总线（Claude Code / Codex / 通用脚本 → 桌宠）。
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    let unlistenBreak: (() => void) | undefined;
+    let unlistenAggregate: (() => void) | undefined;
     let disposed = false;
     void listen<AgentEvent>("agent-event", (event) => handleAgentEvent(event.payload))
       .then((fn) => {
@@ -1753,6 +1762,30 @@ export function PetApp() {
       .catch((error) => {
         void bridge.diagLog(`agent listen failed: ${String(error)}`).catch(() => {});
       });
+    void listen<{ minutes: number; message: string }>("work-break", (event) => {
+      if (M.hidden || proactiveSpeechBlocked()) return;
+      changeMood("tired", 90_000);
+      setBubble({ text: event.payload.message || "连续工作太久了，起来活动一下。", ts: Date.now() });
+      if (M.soundOn && !M.muted) beep("click", { soundOn: M.soundOn, muted: M.muted });
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlistenBreak = fn;
+      })
+      .catch(() => {});
+    void listen<{ count: number; message: string }>("approval-aggregate", (event) => {
+      if (M.hidden || proactiveSpeechBlocked()) return;
+      changeMood("curious", 90_000);
+      setBubble({
+        text: event.payload.message || `有 ${event.payload.count} 个任务在等你确认。`,
+        ts: Date.now(),
+      });
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlistenAggregate = fn;
+      })
+      .catch(() => {});
     void bridge
       .agentHubInfo()
       .then(setAgentHub)
@@ -1769,8 +1802,10 @@ export function PetApp() {
     return () => {
       disposed = true;
       unlisten?.();
+      unlistenBreak?.();
+      unlistenAggregate?.();
     };
-  }, [handleAgentEvent]);
+  }, [handleAgentEvent, changeMood]);
 
   // 普通结果提示 8 秒自动收起；审批请求保持到确认或用户点「稍后」。
   useEffect(() => {

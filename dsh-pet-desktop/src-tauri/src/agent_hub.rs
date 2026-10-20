@@ -13,7 +13,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::config::{app_dir, now_millis, write_atomic};
 
@@ -85,6 +85,8 @@ struct HubInner {
     port: AtomicU16,
     running: AtomicBool,
     recent: Mutex<VecDeque<AgentEvent>>,
+    /// 短期去重：同一 provider/session/kind/status/summary/window/data 在 2 秒内只收一次。
+    seen: Mutex<HashMap<String, u64>>,
 }
 
 /// `tauri::State` 管理的句柄；内部用 Arc，方便把同一份状态移进监听线程。
@@ -112,6 +114,7 @@ impl AgentHub {
                 port: AtomicU16::new(port),
                 running: AtomicBool::new(false),
                 recent: Mutex::new(VecDeque::new()),
+                seen: Mutex::new(HashMap::new()),
             }),
         };
         hub.persist();
@@ -181,6 +184,35 @@ impl AgentHub {
 
     pub fn ingest(&self, app: &AppHandle, event: AgentEvent) -> Result<AgentEvent, String> {
         let event = normalize_event(event)?;
+        // 去重：hook 重试或重复上报时，2 秒内的同一条事件不再入队。
+        // data 参与 key，避免同一工具在两秒内处理不同文件时被误吞。
+        let dedup_key = format!(
+            "{}|{}|{}|{}|{}|{}|{}",
+            event.provider,
+            event.session_id,
+            event.kind,
+            event.status,
+            event.summary,
+            event.window_title,
+            serde_json::to_string(&event.data).unwrap_or_default()
+        );
+        if let Ok(mut seen) = self.inner.seen.lock() {
+            // 用「收到事件的时间」判断重复，而不是事件自带的时间戳：
+            // 导入历史事件时不会把不同时间的两条误判成重复。
+            let now = now_millis();
+            if let Some(prev) = seen.get(&dedup_key) {
+                if now.saturating_sub(*prev) < 2_000 {
+                    return Ok(event);
+                }
+            }
+            seen.insert(dedup_key, now);
+            if seen.len() > 512 {
+                seen.retain(|_, ts| now.saturating_sub(*ts) < 60_000);
+            }
+        }
+        if let Some(focus) = app.try_state::<crate::work_focus::WorkFocus>() {
+            focus.observe(app, &event);
+        }
         if let Err(e) = crate::timeline::append(&event) {
             crate::window::diag(&format!("timeline append failed: {e}"));
         }
@@ -424,6 +456,7 @@ fn reason(status: u16) -> &'static str {
         400 => "Bad Request",
         401 => "Unauthorized",
         404 => "Not Found",
+        405 => "Method Not Allowed",
         413 => "Payload Too Large",
         _ => "Internal Server Error",
     }
@@ -454,6 +487,10 @@ fn handle_connection(mut stream: TcpStream, app: &AppHandle, hub: &AgentHub) {
         return;
     }
     let path_only = req.path.split('?').next().unwrap_or("/");
+    if path_only == "/mcp" && req.method == "GET" {
+        let _ = respond(&mut stream, 405, &json!({"ok": false, "error": "MCP 只接受 POST"}).to_string());
+        return;
+    }
     if path_only != "/health" {
         let provided = req
             .headers
@@ -484,6 +521,12 @@ fn handle_connection(mut stream: TcpStream, app: &AppHandle, hub: &AgentHub) {
                 .and_then(|v| v.parse::<usize>().ok())
                 .unwrap_or(50);
             Ok(json!({"ok": true, "events": hub.recent(limit)}))
+        }
+        ("POST", "/api/focus/reset") => {
+            if let Some(focus) = app.try_state::<crate::work_focus::WorkFocus>() {
+                focus.reset();
+            }
+            Ok(json!({"ok": true}))
         }
         ("POST", "/api/events") | ("POST", "/api/manual") => {
             let parsed: Value = match serde_json::from_slice(&req.body) {
@@ -519,6 +562,16 @@ fn handle_connection(mut stream: TcpStream, app: &AppHandle, hub: &AgentHub) {
             }
             Ok(json!({"ok": true, "count": ids.len(), "ids": ids}))
         }
+        ("POST", "/mcp") => {
+            let parsed: Value = match serde_json::from_slice(&req.body) {
+                Ok(v) => v,
+                Err(e) => {
+                    let _ = respond(&mut stream, 400, &json!({"ok": false, "error": format!("invalid json: {e}")}).to_string());
+                    return;
+                }
+            };
+            Ok(mcp_handle(app, hub, &parsed))
+        }
         _ => {
             let _ = respond(&mut stream, 404, &json!({"ok": false, "error": "not found"}).to_string());
             return;
@@ -526,12 +579,166 @@ fn handle_connection(mut stream: TcpStream, app: &AppHandle, hub: &AgentHub) {
     };
 
     match result {
+        Ok(body) if body.is_null() => {
+            let _ = respond(&mut stream, 204, "");
+        }
         Ok(body) => {
             let _ = respond(&mut stream, 200, &body.to_string());
         }
         Err(e) => {
             let _ = respond(&mut stream, 400, &json!({"ok": false, "error": e}).to_string());
         }
+    }
+}
+
+fn mcp_tools() -> Value {
+    json!([
+        {
+            "name": "report_event",
+            "description": "向桌宠报告一条工作事件（任意 AI 工具都可以调用）",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "kind": { "type": "string", "description": "事件类型，如 tool.start / approval.requested / task.done" },
+                    "provider": { "type": "string", "description": "claude-code / codex / cursor / generic" },
+                    "status": { "type": "string" },
+                    "summary": { "type": "string" },
+                    "project": { "type": "string" },
+                    "sessionId": { "type": "string" },
+                    "attention": { "type": "string", "enum": ["silent", "glance", "interrupt"] },
+                    "severity": { "type": "string", "enum": ["info", "success", "warning", "error"] }
+                },
+                "required": ["kind"]
+            }
+        },
+        {
+            "name": "work_summary",
+            "description": "查询某天的工作摘要与最近 7 天习惯",
+            "inputSchema": {
+                "type": "object",
+                "properties": { "day": { "type": "string", "description": "YYYY-MM-DD，默认今天" } }
+            }
+        },
+        {
+            "name": "work_task_cards",
+            "description": "查询某天的任务卡：项目、工具分布、涉及文件",
+            "inputSchema": {
+                "type": "object",
+                "properties": { "day": { "type": "string", "description": "YYYY-MM-DD，默认今天" } }
+            }
+        },
+        {
+            "name": "work_report",
+            "description": "生成工作日报或周报（Markdown）",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "period": { "type": "string", "enum": ["day", "week"] },
+                    "day": { "type": "string", "description": "YYYY-MM-DD，默认今天" }
+                }
+            }
+        },
+        {
+            "name": "work_focus",
+            "description": "查询当前是否在专注工作、连续了多久、是否该休息",
+            "inputSchema": { "type": "object", "properties": {} }
+        }
+    ])
+}
+
+fn mcp_text(value: Value) -> Value {
+    json!({
+        "content": [{
+            "type": "text",
+            "text": serde_json::to_string_pretty(&value).unwrap_or_default()
+        }],
+        "isError": false
+    })
+}
+
+fn mcp_call(app: &AppHandle, hub: &AgentHub, params: &Value) -> Result<Value, (i64, String)> {
+    let name = params.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    let args = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+    let day = args
+        .get("day")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    match name {
+        "report_event" => {
+            let event: AgentEvent = serde_json::from_value(args)
+                .map_err(|e| (-32602, format!("invalid arguments: {e}")))?;
+            let stored = hub.ingest(app, event).map_err(|e| (-32602, e))?;
+            Ok(mcp_text(json!(stored)))
+        }
+        "work_summary" => {
+            let day = day.unwrap_or_else(crate::timeline::today);
+            let digest = crate::work_memory::digest(&day).map_err(|e| (-32603, e))?;
+            let profile = crate::work_memory::profile(7);
+            let text = crate::work_memory::text(7);
+            Ok(mcp_text(json!({
+                "day": day,
+                "digest": digest,
+                "profile": profile,
+                "text": text
+            })))
+        }
+        "work_task_cards" => {
+            let day = day.unwrap_or_else(crate::timeline::today);
+            let cards = crate::task_card::cards_for_day(&day).map_err(|e| (-32603, e))?;
+            Ok(mcp_text(json!({ "day": day, "cards": cards })))
+        }
+        "work_report" => {
+            let period = args.get("period").and_then(|v| v.as_str()).unwrap_or("day");
+            let report = crate::work_report::build(period, day).map_err(|e| (-32603, e))?;
+            Ok(mcp_text(json!(report)))
+        }
+        "work_focus" => {
+            let state = app.state::<crate::work_focus::WorkFocus>().state();
+            Ok(mcp_text(json!(state)))
+        }
+        _ => Err((-32602, format!("unknown tool: {name}"))),
+    }
+}
+
+fn mcp_handle(app: &AppHandle, hub: &AgentHub, req: &Value) -> Value {
+    let id = req.get("id").cloned().unwrap_or(Value::Null);
+    let method = req.get("method").and_then(|v| v.as_str()).unwrap_or("");
+    let params = req.get("params").cloned().unwrap_or_else(|| json!({}));
+
+    // JSON-RPC 通知没有 id，规范要求不返回响应体。
+    if req.get("id").is_none() || req.get("id") == Some(&Value::Null) {
+        return Value::Null;
+    }
+
+    let result: Result<Value, (i64, String)> = match method {
+        "initialize" => {
+            let version = params
+                .get("protocolVersion")
+                .and_then(|v| v.as_str())
+                .unwrap_or("2024-11-05");
+            Ok(json!({
+                "protocolVersion": version,
+                "capabilities": { "tools": {} },
+                "serverInfo": {
+                    "name": "dsh-pet-desktop",
+                    "version": env!("CARGO_PKG_VERSION")
+                }
+            }))
+        }
+        "notifications/initialized" | "initialized" | "ping" => Ok(json!({})),
+        "tools/list" => Ok(json!({ "tools": mcp_tools() })),
+        "tools/call" => mcp_call(app, hub, &params),
+        _ => Err((-32601, format!("method not found: {method}"))),
+    };
+
+    match result {
+        Ok(value) => json!({ "jsonrpc": "2.0", "id": id, "result": value }),
+        Err((code, message)) => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": { "code": code, "message": message }
+        }),
     }
 }
 

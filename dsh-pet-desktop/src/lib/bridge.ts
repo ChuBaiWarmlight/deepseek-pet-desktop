@@ -10,7 +10,10 @@ import type {
   AgentHubInfo,
   TimelineSummary,
   WorkDayDigest,
+  WorkFocusState,
   WorkProfile,
+  WorkReport,
+  WorkTaskCard,
   AssetsCheck,
   AssetsResolve,
   PetCommand,
@@ -127,6 +130,11 @@ export const bridge = {
   workMemoryDigest: (day?: string) => invoke<WorkDayDigest>("work_memory_digest", { day }),
   workMemoryProfile: (days?: number) => invoke<WorkProfile>("work_memory_profile", { days }),
   workMemoryText: (days?: number) => invoke<string>("work_memory_text", { days }),
+  workFocusState: () => invoke<WorkFocusState>("work_focus_state"),
+  workTaskCards: (day?: string) => invoke<WorkTaskCard[]>("work_task_cards", { day }),
+  workReport: (period?: "day" | "week", day?: string) => invoke<WorkReport>("work_report", { period, day }),
+  workReportExport: (period?: "day" | "week", day?: string) => invoke<string>("work_report_export", { period, day }),
+  workBrief: (kind?: "morning" | "evening") => invoke<string>("work_brief", { kind }),
 
   // ---------- assets (资源平台桥接) ----------
   assetsCheck: () => invoke<AssetsCheck>("assets_check"),
