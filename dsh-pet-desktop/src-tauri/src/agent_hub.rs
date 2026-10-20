@@ -181,6 +181,9 @@ impl AgentHub {
 
     pub fn ingest(&self, app: &AppHandle, event: AgentEvent) -> Result<AgentEvent, String> {
         let event = normalize_event(event)?;
+        if let Err(e) = crate::timeline::append(&event) {
+            crate::window::diag(&format!("timeline append failed: {e}"));
+        }
         if let Ok(mut q) = self.inner.recent.lock() {
             q.push_front(event.clone());
             q.truncate(MAX_RECENT);

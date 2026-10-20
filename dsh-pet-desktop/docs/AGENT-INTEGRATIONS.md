@@ -140,6 +140,24 @@ Invoke-RestMethod -Uri "http://127.0.0.1:$($hub.port)/api/events" `
   -Body $body
 ```
 
+## 会话时间线
+
+事件除了进内存队列，还会按本地日期追加到：
+
+```text
+%USERPROFILE%\.dsh-pet-desktop\timeline\YYYY-MM-DD.jsonl
+```
+
+每行一条原始事件，断电或重启都不会丢历史。读取用这三个命令：
+
+- `agent_timeline(day?, limit?)`：某天的事件，新的在前，默认 500 条。
+- `agent_timeline_summary(day?)`：当天聚合——会话数、工具调用、审批、失败、在岗分钟、按 provider 统计。
+- `agent_timeline_days(limit?)`：有记录的日期列表。
+
+`activeMinutes` 不是简单首尾相减，而是把同一天所有会话区间合并后计算，多开几个终端也不会重复计时。
+
+时间线只存在本机，不参与同步。后续的晨间简报、下班收尾、工作成就都从这里取数。
+
 ## 隐私边界
 
 - 默认不发送 prompt、代码、终端输出。

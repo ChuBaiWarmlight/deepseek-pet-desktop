@@ -10,6 +10,7 @@ mod http;
 mod net;
 mod storage;
 mod system;
+mod timeline;
 mod tray;
 mod window;
 
@@ -17,6 +18,11 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 崩溃时至少留下最后一条线索，避免「突然没了」无从排查。
+    std::panic::set_hook(Box::new(|info| {
+        crate::window::diag(&format!("panic: {info}"));
+    }));
+
     tauri::Builder::default()
         // 共享状态：AI 配置 + 记忆/日记/聊天记录 + 交互区（穿透轮询用）
         .manage(config::Store::load())
@@ -93,6 +99,10 @@ pub fn run() {
             agent_hub::agent_hub_info,
             agent_hub::agent_recent,
             agent_hub::agent_emit,
+            // 工作会话时间线
+            timeline::agent_timeline,
+            timeline::agent_timeline_summary,
+            timeline::agent_timeline_days,
             agent_window::focus_agent_window,
             // fs
             commands::fs::eat_file,
