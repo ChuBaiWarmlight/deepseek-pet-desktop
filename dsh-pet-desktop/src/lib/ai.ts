@@ -255,8 +255,10 @@ export function buildChatPrompt(params: {
   memories: Memory[];
   /** 相关性召回的结果（memory_recall）；缺省时回退用全部记忆。 */
   recalled?: Memory[];
+  /** 由时间线派生的工作日常（work_memory_text），只含项目/时长/工具次数等统计。 */
+  workMemory?: string | null;
 }): ChatPrompt {
-  const { text, history, name, personality, memories, recalled } = params;
+  const { text, history, name, personality, memories, recalled, workMemory } = params;
   const mentioned = !!name && text.indexOf(name) >= 0;
 
   // 长期画像：始终注入，让宠物「认得主人」。
@@ -275,6 +277,12 @@ export function buildChatPrompt(params: {
       "。";
   }
 
+  // 工作日常：只注入一小段统计，避免把聊天 prompt 撑爆。
+  const workLine = workMemory
+    ? "。你记得主人的工作日常（客观记录，聊到工作、累不累、今天做了什么时自然带出，别逐条复述）：" +
+      workMemory.slice(0, 600)
+    : "";
+
   const pLine = personalityLine(personality);
 
   const system =
@@ -283,6 +291,7 @@ export function buildChatPrompt(params: {
     (mentioned ? "主人这次提到了你的名字，你可以更开心、更主动地回应。" : "") +
     pLine +
     profileLine +
+    workLine +
     recallLine +
     "每次只用一句中文回复，不超过200字，善用颜文字和 emoji。不要引号、不要解释、不要罗列多条。";
 

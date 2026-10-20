@@ -13,6 +13,7 @@ mod system;
 mod timeline;
 mod tray;
 mod window;
+mod work_memory;
 
 use tauri::Manager;
 
@@ -103,6 +104,10 @@ pub fn run() {
             timeline::agent_timeline,
             timeline::agent_timeline_summary,
             timeline::agent_timeline_days,
+            // 工作日常记忆
+            work_memory::work_memory_digest,
+            work_memory::work_memory_profile,
+            work_memory::work_memory_text,
             agent_window::focus_agent_window,
             // fs
             commands::fs::eat_file,

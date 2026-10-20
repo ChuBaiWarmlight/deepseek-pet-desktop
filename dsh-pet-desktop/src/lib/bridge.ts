@@ -9,6 +9,8 @@ import type {
   AgentEventInput,
   AgentHubInfo,
   TimelineSummary,
+  WorkDayDigest,
+  WorkProfile,
   AssetsCheck,
   AssetsResolve,
   PetCommand,
@@ -122,6 +124,9 @@ export const bridge = {
   agentTimeline: (day?: string, limit?: number) => invoke<AgentEvent[]>("agent_timeline", { day, limit }),
   agentTimelineSummary: (day?: string) => invoke<TimelineSummary>("agent_timeline_summary", { day }),
   agentTimelineDays: (limit?: number) => invoke<string[]>("agent_timeline_days", { limit }),
+  workMemoryDigest: (day?: string) => invoke<WorkDayDigest>("work_memory_digest", { day }),
+  workMemoryProfile: (days?: number) => invoke<WorkProfile>("work_memory_profile", { days }),
+  workMemoryText: (days?: number) => invoke<string>("work_memory_text", { days }),
 
   // ---------- assets (资源平台桥接) ----------
   assetsCheck: () => invoke<AssetsCheck>("assets_check"),

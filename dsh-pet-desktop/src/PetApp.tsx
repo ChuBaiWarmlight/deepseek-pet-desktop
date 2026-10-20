@@ -1194,6 +1194,8 @@ export function PetApp() {
           recalled = [];
         }
       }
+      // 工作日常：从时间线读最近 7 天的统计，失败就不注入。
+      const workMemory = await bridge.workMemoryText(7).catch(() => "");
       const prompt = ai.buildChatPrompt({
         text,
         history: next,
@@ -1201,6 +1203,7 @@ export function PetApp() {
         personality: M.personality,
         memories: allMemories,
         recalled,
+        workMemory,
       });
       // 先挂一个空助手气泡，随后逐字流式填充
       setChatHistory([...next, { role: "assistant", text: "" }]);

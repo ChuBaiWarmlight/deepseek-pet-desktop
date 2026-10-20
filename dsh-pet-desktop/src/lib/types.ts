@@ -232,6 +232,48 @@ export interface TimelineSummary {
   sessionList: TimelineSessionSpan[];
 }
 
+export interface WorkProjectSlice {
+  name: string;
+  minutes: number;
+  events: number;
+}
+
+export interface WorkDayDigest {
+  date: string;
+  events: number;
+  activeMinutes: number;
+  sessions: number;
+  toolCalls: number;
+  approvals: number;
+  failures: number;
+  completions: number;
+  firstTs: number;
+  lastTs: number;
+  startTime: string;
+  endTime: string;
+  projects: WorkProjectSlice[];
+  providers: string[];
+}
+
+export interface WorkProjectTotal {
+  name: string;
+  days: number;
+  minutes: number;
+  events: number;
+}
+
+export interface WorkProfile {
+  days: number;
+  totalMinutes: number;
+  avgMinutes: number;
+  streakDays: number;
+  typicalStart: string;
+  typicalEnd: string;
+  topProjects: WorkProjectTotal[];
+  recent: WorkDayDigest[];
+  summary: string;
+}
+
 export interface PetHeartbeat {
   name: string;
   affinity: number;
