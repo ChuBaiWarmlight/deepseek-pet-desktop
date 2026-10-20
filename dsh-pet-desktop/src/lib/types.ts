@@ -193,6 +193,45 @@ export interface AgentHubInfo {
   recentCount: number;
 }
 
+export interface TimelineSessionSpan {
+  provider: string;
+  sessionId: string;
+  project: string;
+  startTs: number;
+  endTs: number;
+  minutes: number;
+  events: number;
+  toolCalls: number;
+  approvals: number;
+  failures: number;
+}
+
+export interface TimelineProviderStat {
+  provider: string;
+  events: number;
+  sessions: number;
+  toolCalls: number;
+  approvals: number;
+  failures: number;
+}
+
+export interface TimelineSummary {
+  date: string;
+  events: number;
+  sessions: number;
+  projects: string[];
+  providers: string[];
+  toolCalls: number;
+  approvals: number;
+  failures: number;
+  completions: number;
+  activeMinutes: number;
+  firstTs: number;
+  lastTs: number;
+  byProvider: TimelineProviderStat[];
+  sessionList: TimelineSessionSpan[];
+}
+
 export interface PetHeartbeat {
   name: string;
   affinity: number;

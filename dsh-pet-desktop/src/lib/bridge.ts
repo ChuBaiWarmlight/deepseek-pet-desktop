@@ -8,6 +8,7 @@ import type {
   AgentEvent,
   AgentEventInput,
   AgentHubInfo,
+  TimelineSummary,
   AssetsCheck,
   AssetsResolve,
   PetCommand,
@@ -118,6 +119,9 @@ export const bridge = {
   agentRecent: (limit?: number) => invoke<AgentEvent[]>("agent_recent", { limit }),
   agentEmit: (event: AgentEventInput) => invoke<AgentEvent>("agent_emit", { event }),
   focusAgentWindow: (query: string) => invoke<string>("focus_agent_window", { query }),
+  agentTimeline: (day?: string, limit?: number) => invoke<AgentEvent[]>("agent_timeline", { day, limit }),
+  agentTimelineSummary: (day?: string) => invoke<TimelineSummary>("agent_timeline_summary", { day }),
+  agentTimelineDays: (limit?: number) => invoke<string[]>("agent_timeline_days", { limit }),
 
   // ---------- assets (资源平台桥接) ----------
   assetsCheck: () => invoke<AssetsCheck>("assets_check"),
