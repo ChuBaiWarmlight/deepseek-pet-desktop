@@ -71,3 +71,23 @@ pnpm tauri dev     # 前端 + 桌宠开发模式（走 devUrl）
 | 无聊 | 3–8 分钟没有互动 | `mood:bored` 动作加权，会主动找事做 |
 
 高优先级心情不会被低优先级事件覆盖；摸头、投喂和任务完成可以强制把宠物哄好。心情会随主状态持久化，重启后未过期的定时心情继续生效。调度器会把这些标签与时间、场景、冷却一起评分，具体见 `src/lib/mood.ts` 和 `src/lib/behaviorScheduler.ts`。
+
+## 工作搭子（Claude Code / Codex）
+
+桌宠内置本机事件总线，默认监听 `127.0.0.1:17777`。右键菜单打开「🤝 工作搭子」可以看到运行状态、复制 Token、手动模拟事件和时间线。
+
+接入 Claude Code：
+
+```powershell
+powershell -File scripts\install-agent-hooks.ps1 -Claude
+```
+
+接入 Codex：
+
+```powershell
+powershell -File scripts\install-agent-hooks.ps1 -Codex
+```
+
+接入后，终端里的 AI 工具会把「开始工作 / 工具调用 / 等待确认 / 测试结果 / 回合完成」等事件发给桌宠。审批事件会弹出「去看看」气泡，点击后尝试把终端或 Codex/ChatGPT 窗口切到前台。完整协议和手动接入方式见 `docs/AGENT-INTEGRATIONS.md`。
+
+接入异常时先跑 `powershell -File scripts\doctor-agent-hooks.ps1` 自检：事件总线、`claude` 是否可用、nvm 当前版本、Claude / Codex hook 是否完整，都会给出结论。
