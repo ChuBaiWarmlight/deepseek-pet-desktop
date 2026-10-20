@@ -300,4 +300,14 @@ powershell -File scripts\smoke-agent-hub.ps1
 1. 打开桌宠右键菜单 →「🤝 工作搭子」，确认事件总线显示「运行中」。
 2. 点「手动模拟」里的「等待确认」，应出现审批气泡。
 3. 如果 Claude Code 没反应，运行 `powershell -File scripts\agent-hook.ps1 -Provider claude-code`，把一段 JSON 从 stdin 喂进去测试。脚本会按 UTF-8 读取 stdin（PowerShell 5.1 默认是 GBK，会弄坏中文 JSON）。
-4. 如果「去看看」找不到窗口，检查 `windowTitle` 是否和实际窗口标题匹配；也可以在脚本里设置 `DSH_PET_CLAUDE_WINDOW` / `DSH_PET_CODEX_WINDOW`。
+4. 如果「去看看」找错窗口，检查 `windowTitle` 是否和实际窗口标题匹配；也可以在脚本里设置 `DSH_PET_CLAUDE_WINDOW` / `DSH_PET_CODEX_WINDOW`。
+
+## 定位窗口
+
+「工作搭子」里的「定位窗口」会按三层顺序处理：
+
+1. 先找已经打开的窗口：同时匹配窗口标题、进程名和事件里的项目目录。Codex / ChatGPT 桌面版的实际进程名是 `ChatGPT.exe`（属于 `OpenAI.Codex` 包），所以标题只写 `Codex` 也能正确定位。
+2. Claude Code 优先匹配标题里包含 `Claude` 或项目目录的终端 / VS Code 窗口；不会随便抢一个无关的 PowerShell 窗口。
+3. 找不到时自动启动：Claude Code 会打开 Windows Terminal 到事件的 `cwd`，并尝试 `claude --resume <sessionId>`；ChatGPT / Codex 会通过开始菜单应用启动。
+
+如果 Claude Code 终端的标题既不含项目名也不含 Claude，定位会认为它不存在并新开一个窗口。此时可以把终端标签改成项目名，或设置 `DSH_PET_CLAUDE_WINDOW` 为固定标题。

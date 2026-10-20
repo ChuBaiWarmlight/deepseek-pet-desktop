@@ -55,7 +55,7 @@ import { loadJson, saveJson } from "./lib/storage";
 import { clamp } from "./lib/utils";
 import { primeVoices, speak, stopSpeaking } from "./lib/voice";
 import { applyMood, fallbackLineFor, normalizeMood, resolveMood, type MoodId } from "./lib/mood";
-import { agentDetail, agentFocusQuery, agentHeadline, agentIsFailure, agentProviderLabel } from "./lib/agent";
+import { agentDetail, agentFocusRequest, agentHeadline, agentIsFailure, agentProviderLabel } from "./lib/agent";
 import type {
   AgentEvent,
   AgentHubInfo,
@@ -695,8 +695,13 @@ export function PetApp() {
   // -------------------------------------------------------------------------
   const focusAgentWindow = useCallback(async (ev: AgentEvent) => {
     try {
-      const title = await bridge.focusAgentWindow(agentFocusQuery(ev));
-      setBubble({ text: `已切换到：${title}`, ts: Date.now() });
+      const result = await bridge.focusAgentWindow(agentFocusRequest(ev));
+      const text = result.focused
+        ? `${result.launched ? "已打开并切换到" : "已切换到"}：${result.title}`
+        : result.launched
+          ? `已发起启动：${result.title}`
+          : `已找到窗口但未能切到前台：${result.title}`;
+      setBubble({ text, ts: Date.now() });
       setAgentNotice(null);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -2825,7 +2830,7 @@ export function PetApp() {
           onEmit={async (event) => {
             await bridge.agentEmit(event);
           }}
-          onFocus={(query) => bridge.focusAgentWindow(query)}
+          onFocus={(req) => bridge.focusAgentWindow(req)}
           onClose={() => setAgentPanelOpen(false)}
           anchor={panelAnchor}
         />

@@ -257,7 +257,7 @@ fn generate_token() -> String {
     format!("{:016x}{:016x}", a.finish(), b.finish())
 }
 
-fn normalize_provider(raw: &str) -> String {
+pub(crate) fn normalize_provider(raw: &str) -> String {
     let p = raw.trim().to_lowercase().replace('_', "-");
     match p.as_str() {
         "" => "generic".into(),

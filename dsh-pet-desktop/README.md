@@ -88,7 +88,7 @@ powershell -File scripts\install-agent-hooks.ps1 -Claude
 powershell -File scripts\install-agent-hooks.ps1 -Codex
 ```
 
-接入后，终端里的 AI 工具会把「开始工作 / 工具调用 / 等待确认 / 测试结果 / 回合完成」等事件发给桌宠。审批事件会弹出「去看看」气泡，点击后尝试把终端或 Codex/ChatGPT 窗口切到前台。完整协议和手动接入方式见 `docs/AGENT-INTEGRATIONS.md`。
+接入后，终端里的 AI 工具会把「开始工作 / 工具调用 / 等待确认 / 测试结果 / 回合完成」等事件发给桌宠。审批事件会弹出「去看看」气泡，任务卡和最近事件也有「定位窗口」：优先切到对应终端 / ChatGPT(Codex) 窗口，找不到时会自动打开 Claude Code 终端或 ChatGPT/Codex 桌面应用。完整协议和手动接入方式见 `docs/AGENT-INTEGRATIONS.md`。
 
 接入异常时先跑 `powershell -File scripts\doctor-agent-hooks.ps1` 自检：事件总线、`claude` 是否可用、nvm 当前版本、Claude / Codex hook 是否完整，都会给出结论。
 

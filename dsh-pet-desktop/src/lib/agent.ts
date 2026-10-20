@@ -1,6 +1,6 @@
 // 工作搭子事件的可读文案与轻量判定。
 
-import type { AgentEvent } from "./types";
+import type { AgentEvent, AgentFocusRequest } from "./types";
 
 const PROVIDER_LABELS: Record<string, string> = {
   "claude-code": "Claude Code",
@@ -54,4 +54,14 @@ export function agentDetail(ev: AgentEvent): string {
 
 export function agentFocusQuery(ev: AgentEvent): string {
   return (ev.windowTitle || agentProviderLabel(ev.provider)).trim();
+}
+
+export function agentFocusRequest(ev: AgentEvent): AgentFocusRequest {
+  return {
+    query: agentFocusQuery(ev),
+    provider: ev.provider,
+    cwd: ev.cwd,
+    project: ev.project,
+    sessionId: ev.sessionId,
+  };
 }

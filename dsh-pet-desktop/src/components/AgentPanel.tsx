@@ -2,11 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
-import { agentDetail, agentHeadline, agentIsFailure, agentKindLabel, agentProviderLabel } from "../lib/agent";
+import {
+  agentDetail,
+  agentFocusRequest,
+  agentHeadline,
+  agentIsFailure,
+  agentKindLabel,
+  agentProviderLabel,
+} from "../lib/agent";
 import { bridge } from "../lib/bridge";
 import type {
   AgentEvent,
   AgentEventInput,
+  AgentFocusRequest,
+  AgentFocusResult,
   AgentHubInfo,
   WorkFocusState,
   WorkReport,
@@ -18,7 +27,7 @@ interface AgentPanelProps {
   events: AgentEvent[];
   hub: AgentHubInfo | null;
   onEmit: (event: AgentEventInput) => Promise<void>;
-  onFocus: (query: string) => Promise<string>;
+  onFocus: (req: AgentFocusRequest) => Promise<AgentFocusResult>;
   onClose: () => void;
   anchor?: PanelAnchor;
 }
@@ -164,10 +173,15 @@ export function AgentPanel(props: AgentPanelProps) {
     }
   };
 
-  const focus = async (ev: AgentEvent) => {
+  const focus = async (req: AgentFocusRequest) => {
     try {
-      const title = await p.onFocus(ev.windowTitle || agentProviderLabel(ev.provider));
-      setMessage(`已切换到：${title}`);
+      const result = await p.onFocus(req);
+      const text = result.focused
+        ? `${result.launched ? "已打开并切换到" : "已切换到"}：${result.title}`
+        : result.launched
+          ? `已发起启动：${result.title}`
+          : `已找到窗口但未能切到前台：${result.title}`;
+      setMessage(text);
     } catch (error) {
       setMessage(`切换窗口失败：${error instanceof Error ? error.message : String(error)}`);
     }
@@ -259,6 +273,21 @@ export function AgentPanel(props: AgentPanelProps) {
                   {card.files.length > 3 ? ` 等 ${card.files.length} 个` : ""}
                 </div>
               )}
+              <button
+                className="dsh-vpet-agent-link"
+                type="button"
+                onClick={() =>
+                  void focus({
+                    query: card.project || agentProviderLabel(card.provider),
+                    provider: card.provider,
+                    cwd: card.cwd,
+                    project: card.project,
+                    sessionId: card.sessionId,
+                  })
+                }
+              >
+                定位窗口
+              </button>
             </div>
           ))}
         </div>
@@ -319,7 +348,7 @@ export function AgentPanel(props: AgentPanelProps) {
               <div className="dsh-vpet-agent-event-title">{agentHeadline(ev)}</div>
               <div className="dsh-vpet-agent-event-detail">{agentDetail(ev)}</div>
               {(ev.kind === "approval.requested" || ev.windowTitle) && (
-                <button className="dsh-vpet-agent-link" type="button" onClick={() => void focus(ev)}>
+                <button className="dsh-vpet-agent-link" type="button" onClick={() => void focus(agentFocusRequest(ev))}>
                   定位窗口
                 </button>
               )}

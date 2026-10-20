@@ -184,6 +184,21 @@ export interface AgentEvent {
 
 export type AgentEventInput = Partial<AgentEvent> & { kind: string };
 
+export interface AgentFocusRequest {
+  query: string;
+  provider?: string;
+  cwd?: string;
+  project?: string;
+  sessionId?: string;
+}
+
+export interface AgentFocusResult {
+  title: string;
+  target: string;
+  launched: boolean;
+  focused: boolean;
+}
+
 export interface AgentHubInfo {
   running: boolean;
   host: string;
