@@ -5,6 +5,9 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import type {
   AiConfig,
   AiConfigUpdate,
+  AgentEvent,
+  AgentEventInput,
+  AgentHubInfo,
   AssetsCheck,
   AssetsResolve,
   PetCommand,
@@ -109,6 +112,12 @@ export const bridge = {
   dshCheck: () => invoke<DshCheck>("dsh_check"),
   dshContext: () => invoke<DshContext>("dsh_context"),
   dshTaskboard: () => invoke<DshTaskboard>("dsh_taskboard"),
+
+  // ---------- agent hub（Claude Code / Codex / 通用工作事件） ----------
+  agentHubInfo: () => invoke<AgentHubInfo>("agent_hub_info"),
+  agentRecent: (limit?: number) => invoke<AgentEvent[]>("agent_recent", { limit }),
+  agentEmit: (event: AgentEventInput) => invoke<AgentEvent>("agent_emit", { event }),
+  focusAgentWindow: (query: string) => invoke<string>("focus_agent_window", { query }),
 
   // ---------- assets (资源平台桥接) ----------
   assetsCheck: () => invoke<AssetsCheck>("assets_check"),

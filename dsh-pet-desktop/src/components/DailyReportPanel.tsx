@@ -22,7 +22,9 @@ export function DailyReportPanel(props: DailyReportPanelProps) {
   return (
     <div ref={drag.ref} className="dsh-vpet-reportpanel">
       <PanelHead
-        title="📊 每日陪伴报告"
+        icon="📊"
+        title="每日陪伴报告"
+        subtitle="一起回顾今天"
         onClose={props.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
@@ -45,21 +47,26 @@ export function DailyReportPanel(props: DailyReportPanelProps) {
               </option>
             ))}
           </select>
-          <button
-            className="dsh-vpet-chat-btn"
-            type="button"
-            disabled={props.busy}
-            onClick={() => void props.onGenerate()}
-          >
-            {props.busy ? "生成中…" : "生成今天"}
-          </button>
+          {props.reports.length > 0 && (
+            <button
+              className="dsh-vpet-chat-btn"
+              type="button"
+              disabled={props.busy}
+              onClick={() => void props.onGenerate()}
+            >
+              {props.busy ? "生成中…" : "生成今天"}
+            </button>
+          )}
         </div>
         {props.message && <div className="dsh-vpet-settings-hint">{props.message}</div>}
         {!selected ? (
           <div className="dsh-vpet-diarypanel-empty">
-            <div>今天还没有报告</div>
-            <div>晚上 21:00 会自动生成</div>
-            <div>也可以现在手动生成一份</div>
+            <span className="dsh-vpet-empty-icon" aria-hidden="true">🌙</span>
+            <div className="dsh-vpet-empty-title">今天还没有报告</div>
+            <div className="dsh-vpet-empty-desc">晚上 21:00 会自动生成，也可以现在手动生成一份。</div>
+            <button className="dsh-vpet-settings-btn" type="button" disabled={props.busy} onClick={() => void props.onGenerate()}>
+              {props.busy ? "生成中…" : "生成今天的报告"}
+            </button>
           </div>
         ) : (
           <div className="dsh-vpet-reportcard">

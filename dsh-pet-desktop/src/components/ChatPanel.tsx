@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
 import { createSpeechRecognizer, speechSupported } from "../lib/speech";
 import type { ChatTurn } from "../lib/types";
+import { PanelHead } from "./PanelHead";
 
 interface ChatPanelProps {
   history: ChatTurn[];
@@ -42,16 +43,16 @@ export function ChatPanel(props: ChatPanelProps) {
   }, [props.history]);
   return (
     <div ref={drag.ref} className="dsh-vpet-chat">
-      <div
-        className="dsh-vpet-chat-head"
+      <PanelHead
+        icon="💬"
+        title="聊天"
+        subtitle="随时聊聊今天的事"
+        onClose={props.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
         onPointerUp={drag.onPointerUp}
         onPointerCancel={drag.onPointerCancel}
-      >
-        <span>💬 聊天</span>
-        <button className="dsh-vpet-chat-close" type="button" onClick={props.onClose} aria-label="关闭聊天">✕</button>
-      </div>
+      />
       <div className="dsh-vpet-chat-log" ref={logRef}>
         {props.history.map((h, i) => {
           const streaming = i === props.history.length - 1 && props.loading && h.role === "assistant";

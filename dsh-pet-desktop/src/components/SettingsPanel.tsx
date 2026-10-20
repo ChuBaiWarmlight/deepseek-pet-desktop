@@ -1,7 +1,7 @@
 // 设置面板：基础 / AI 配置 / 语音朗读 / 性格与提醒 / 数据 / 设备配对 折叠分区。
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
 import { bridge } from "../lib/bridge";
 import type { SceneMode } from "../lib/behaviorScheduler";
@@ -10,6 +10,7 @@ import { generateSyncCode } from "../lib/crypto";
 import type { ModelProfileView, TrashItem } from "../lib/types";
 import { getVoices, speak } from "../lib/voice";
 import { PanelHead } from "./PanelHead";
+import { Toggle } from "./Toggle";
 
 interface SettingsPanelProps {
   scale: number;
@@ -88,7 +89,9 @@ export function SettingsPanel(props: SettingsPanelProps) {
   return (
     <div ref={drag.ref} className="dsh-vpet-settings">
       <PanelHead
-        title="⚙️ 设置"
+        icon="⚙️"
+        title="设置"
+        subtitle="外观、声音与陪伴方式"
         onClose={p.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
@@ -106,7 +109,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
             onChange={(e) => p.setName(e.target.value)}
           />
         </div>
-        <div className="dsh-vpet-settings-row">
+        <div className="dsh-vpet-settings-row dsh-vpet-settings-row-range">
           <span className="dsh-vpet-settings-label">大小 {Math.round(p.scale * 100)}%</span>
           <input
             type="range"
@@ -119,35 +122,57 @@ export function SettingsPanel(props: SettingsPanelProps) {
         </div>
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">音效</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setSoundOn(!p.soundOn)}>
-            {p.soundOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.soundOn} onChange={p.setSoundOn} label="音效" />
         </div>
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">喝水提醒</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setWaterOn(!p.waterOn)}>
-            {p.waterOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.waterOn} onChange={p.setWaterOn} label="喝水提醒" />
         </div>
       </Section>
       <Section label="外观与主题" open={p.sectionsOpen.appearance} onToggle={() => toggle("appearance")}>
         <div className="dsh-vpet-theme-grid">
-          {THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              className={"dsh-vpet-theme-card" + (p.theme === theme.id ? " is-active" : "")}
-              onClick={() => p.setTheme(theme.id)}
-              title={`切换到${theme.name}主题`}
-            >
-              <span>{theme.emoji}</span>
-              <span className="dsh-vpet-theme-name">{theme.name}</span>
-              <span className="dsh-vpet-theme-dots">
-                {theme.colors.map((color) => (
-                  <span key={color} className="dsh-vpet-theme-dot" style={{ background: color }} />
-                ))}
-              </span>
-            </button>
-          ))}
+          {THEMES.map((theme) => {
+            const active = p.theme === theme.id;
+            return (
+              <button
+                key={theme.id}
+                type="button"
+                className={"dsh-vpet-theme-card" + (active ? " is-active" : "")}
+                onClick={() => p.setTheme(theme.id)}
+                aria-pressed={active}
+                title={`切换到${theme.name}主题`}
+                style={
+                  {
+                    "--t-bg": theme.preview.bg,
+                    "--t-surface": theme.preview.surface,
+                    "--t-soft": theme.preview.soft,
+                    "--t-border": theme.preview.border,
+                    "--t-text": theme.preview.text,
+                    "--t-accent": theme.colors[0],
+                  } as CSSProperties
+                }
+              >
+                <span className="dsh-vpet-theme-preview" aria-hidden="true">
+                  <span className="dsh-vpet-theme-preview-head">
+                    <span className="dsh-vpet-theme-preview-title" />
+                    <span className="dsh-vpet-theme-preview-dot" />
+                  </span>
+                  <span className="dsh-vpet-theme-preview-bubble" />
+                  <span className="dsh-vpet-theme-preview-line" />
+                  <span className="dsh-vpet-theme-preview-line is-short" />
+                  <span className="dsh-vpet-theme-preview-pill" />
+                </span>
+                <span className="dsh-vpet-theme-meta">
+                  <span className="dsh-vpet-theme-name">
+                    <span className="dsh-vpet-theme-emoji" aria-hidden="true">{theme.emoji}</span>
+                    {theme.name}
+                    {active && <span className="dsh-vpet-theme-check" aria-hidden="true">✓</span>}
+                  </span>
+                  <span className="dsh-vpet-theme-desc">{theme.desc}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
         <div className="dsh-vpet-settings-hint">
           主题会立即应用到所有面板、菜单和气泡，并随配置保存；管理平台下发 skin 命令也可切换。
@@ -169,7 +194,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
         />
       </Section>
       <Section label="性格与提醒" open={p.sectionsOpen.pet} onToggle={() => toggle("pet")}>
-        <div className="dsh-vpet-settings-row">
+        <div className="dsh-vpet-settings-row dsh-vpet-settings-row-block">
           <span className="dsh-vpet-settings-label">场景模式</span>
           <span className="dsh-vpet-scene-grid">
             {([
@@ -191,11 +216,11 @@ export function SettingsPanel(props: SettingsPanelProps) {
         <div className="dsh-vpet-settings-hint">
           工作：尽量保持专注动画；休息：慢节奏待机；勿扰：停止主动开口/粒子，仍可点击互动；自动：由状态机按优先级决定。
         </div>
-        <div className="dsh-vpet-settings-row">
+        <div className="dsh-vpet-settings-row dsh-vpet-settings-row-range">
           <span className="dsh-vpet-settings-label">毒舌程度 {p.sass}</span>
           <input type="range" min={0} max={100} value={p.sass} onChange={(e) => p.setSass(Number(e.target.value))} />
         </div>
-        <div className="dsh-vpet-settings-row">
+        <div className="dsh-vpet-settings-row dsh-vpet-settings-row-range">
           <span className="dsh-vpet-settings-label">话痨程度 {p.talkativity}</span>
           <input
             type="range"
@@ -208,9 +233,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
         <div className="dsh-vpet-settings-hint">0 = 几乎不主动开口，100 = 约每分钟一次；点击/聊天等主动互动不受影响。</div>
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">安静时段</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setQuietOn(!p.quietOn)}>
-            {p.quietOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.quietOn} onChange={p.setQuietOn} label="安静时段" />
         </div>
         {p.quietOn && (
           <div className="dsh-vpet-settings-row">
@@ -232,9 +255,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
         )}
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">会议自动静音</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setSceneMuteOn(!p.sceneMuteOn)}>
-            {p.sceneMuteOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.sceneMuteOn} onChange={p.setSceneMuteOn} label="会议自动静音" />
         </div>
         <div className="dsh-vpet-settings-hint">检测到会议/通话时，仅暂停主动说话与粒子，不隐藏桌宠、不阻塞交互。</div>
         <div className="dsh-vpet-settings-row">
@@ -258,15 +279,11 @@ export function SettingsPanel(props: SettingsPanelProps) {
         </div>
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">前台应用吐槽</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setAppTeaseOn(!p.appTeaseOn)}>
-            {p.appTeaseOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.appTeaseOn} onChange={p.setAppTeaseOn} label="前台应用吐槽" />
         </div>
         <div className="dsh-vpet-settings-row">
           <span className="dsh-vpet-settings-label">低电量提醒</span>
-          <button className="dsh-vpet-settings-btn" onClick={() => p.setBatteryOn(!p.batteryOn)}>
-            {p.batteryOn ? "开" : "关"}
-          </button>
+          <Toggle checked={p.batteryOn} onChange={p.setBatteryOn} label="低电量提醒" />
         </div>
       </Section>
       <Section label="数据" open={p.sectionsOpen.data} onToggle={() => toggle("data")}>
@@ -440,20 +457,16 @@ function VoiceSettings(props: {
     <div>
       <div className="dsh-vpet-settings-row">
         <span className="dsh-vpet-settings-label">启用语音</span>
-        <button className="dsh-vpet-settings-btn" onClick={() => props.setVoiceOn(!props.voiceOn)}>
-          {props.voiceOn ? "开" : "关"}
-        </button>
+        <Toggle checked={props.voiceOn} onChange={props.setVoiceOn} label="启用语音" />
       </div>
       <div className="dsh-vpet-settings-row">
         <span className="dsh-vpet-settings-label">主动吐槽也朗读</span>
-        <button className="dsh-vpet-settings-btn" onClick={() => props.setVoiceAmbient(!props.voiceAmbient)}>
-          {props.voiceAmbient ? "开" : "关"}
-        </button>
+        <Toggle checked={props.voiceAmbient} onChange={props.setVoiceAmbient} label="主动吐槽也朗读" />
       </div>
       <div className="dsh-vpet-settings-hint">
         点击、聊天回复和提醒默认会朗读；主动吐槽默认只显示气泡，避免频繁打断。安静时段与会议静音仍然优先。
       </div>
-      <div className="dsh-vpet-settings-row">
+      <div className="dsh-vpet-settings-row dsh-vpet-settings-row-range">
         <span className="dsh-vpet-settings-label">语速 {props.voiceRate.toFixed(1)}x</span>
         <input
           type="range"
@@ -581,10 +594,10 @@ function DeviceSettings() {
 function Section(props: { label: string; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
     <div>
-      <div className="dsh-vpet-sec-head" onClick={props.onToggle}>
+      <button type="button" className="dsh-vpet-sec-head" onClick={props.onToggle} aria-expanded={props.open}>
         <span className="dsh-vpet-sec-arrow">{props.open ? "▼" : "▶"}</span>
         <span className="dsh-vpet-sec-label">{props.label}</span>
-      </div>
+      </button>
       {props.open && <div className="dsh-vpet-sec-body">{props.children}</div>}
     </div>
   );

@@ -1,5 +1,7 @@
 //! dsh-pet-desktop 库入口：注册模块、管理共享状态、装配 Tauri 应用。
 
+mod agent_hub;
+mod agent_window;
 mod autostart;
 mod commands;
 mod config;
@@ -20,9 +22,14 @@ pub fn run() {
         .manage(config::Store::load())
         .manage(storage::RecordsStore::load())
         .manage(window::HitRegions::default())
+        .manage(agent_hub::AgentHub::load())
         .setup(|app| {
             window::setup_fullscreen(app.handle())?;
             tray::setup_tray(app.handle())?;
+            match app.state::<agent_hub::AgentHub>().start(app.handle().clone()) {
+                Ok(port) => window::diag(&format!("agent hub listening on 127.0.0.1:{port}")),
+                Err(e) => window::diag(&format!("agent hub start failed: {e}")),
+            }
             // 允许 asset 协议访问资源缓存目录（convertFileSrc 播放缓存视频）
             app.asset_protocol_scope()
                 .allow_directory(config::app_dir().join("cache").join("assets").join("videos"), true)?;
@@ -82,6 +89,11 @@ pub fn run() {
             commands::dsh::dsh_check,
             commands::dsh::dsh_context,
             commands::dsh::dsh_taskboard,
+            // agent hub（Claude Code / Codex / 通用适配器）
+            agent_hub::agent_hub_info,
+            agent_hub::agent_recent,
+            agent_hub::agent_emit,
+            agent_window::focus_agent_window,
             // fs
             commands::fs::eat_file,
             commands::fs::trash_list,

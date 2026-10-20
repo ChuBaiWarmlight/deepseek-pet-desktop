@@ -1,114 +1,113 @@
 /* dsh-pet-desktop 样式
-   设计方向：糖果贴纸 · 明亮软糖风
-   主题：每个面板都是一枚"模切贴纸"——奶油底 + 白描边 + 顶部糖霜高光 + 大圆角，
-   糖果色（草莓粉 / 薄荷 / 葡萄）点缀，像贴在桌面上的软糖小卡片。 */
+   设计方向：暖白纸感 + 单一强调色。面板像安静的桌面卡片，
+   用 1px 描边、克制的圆角与轻阴影建立层级，不再使用糖果渐变和发光。 */
 
 /* ---------------------------------------------------------------------------
- * 令牌（token）
+ * 令牌
  * ------------------------------------------------------------------------- */
 :root {
-  /* 糖果底色 */
-  --cream: #fff6ef;          /* 香草奶油底 */
-  --cream-2: #ffefe4;        /* 稍深的奶油（凹陷底 / 轨道） */
-  --white: #ffffff;
+  --bg: #fff9f7;
+  --surface: #ffffff;
+  --surface-2: #faf5f3;
+  --surface-3: #f4eceb;
+  --text: #2f2430;
+  --text-2: #6d5f6c;
+  --text-3: #958895;
+  --border: #f0e6e7;
+  --border-subtle: #f6eef0;
+  --border-strong: #e2d3d7;
+  --accent: #c9446d;
+  --accent-strong: #a92f56;
+  --accent-soft: rgba(201, 68, 109, 0.09);
+  --accent-softer: rgba(201, 68, 109, 0.055);
+  --accent-contrast: #ffffff;
+  --success: #1f8f6c;
+  --success-soft: rgba(31, 143, 108, 0.10);
+  --warning: #b17618;
+  --warning-soft: rgba(177, 118, 24, 0.10);
+  --danger: #c53d45;
+  --danger-soft: rgba(197, 61, 69, 0.09);
 
-  /* 草莓（主强调） */
-  --pink: #ff5d8f;
-  --pink-deep: #ec3d78;
-  --pink-soft: rgba(255, 93, 143, 0.15);
+  /* 兼容旧组件中的内联变量 */
+  --cream: var(--bg);
+  --cream-2: var(--surface-2);
+  --white: var(--surface);
+  --pink: var(--accent);
+  --pink-deep: var(--accent-strong);
+  --pink-soft: var(--accent-soft);
+  --mint: #5b8f7f;
+  --mint-soft: rgba(91, 143, 127, 0.10);
+  --grape: #7e6a75;
+  --grape-soft: rgba(126, 106, 117, 0.10);
+  --butter: #d9a441;
+  --ink: var(--text);
+  --ink-2: var(--text-2);
+  --ink-3: var(--text-3);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
 
-  /* 薄荷（次级） */
-  --mint: #1fc4a4;
-  --mint-soft: rgba(31, 196, 164, 0.16);
+  --shadow-panel: 0 1px 2px rgba(47, 36, 48, 0.05), 0 12px 32px rgba(47, 36, 48, 0.13);
+  --shadow-float: 0 1px 2px rgba(47, 36, 48, 0.06), 0 8px 20px rgba(47, 36, 48, 0.12);
+  --shadow-sticker: var(--shadow-float);
+  --shadow-tight: var(--shadow-float);
 
-  /* 葡萄（点缀） */
-  --grape: #9a7bf5;
-  --grape-soft: rgba(154, 123, 245, 0.15);
+  --radius-panel: 18px;
+  --radius-control: 10px;
 
-  /* 奶油黄（极少量点缀） */
-  --butter: #ffc94d;
-
-  /* 墨色（深莓，非纯黑） */
-  --ink: #4a2b3a;
-  --ink-2: #9a7f8c;
-  --ink-3: #c6b0bb;
-
-  /* 描边 */
-  --line: #f5e0ea;
-  --line-strong: #ebc9d9;
-
-  /* 危险 */
-  --danger: #e5484d;
-  --danger-soft: rgba(229, 72, 77, 0.14);
-
-  /* 字体 */
   --font-sans: "Segoe UI", "Microsoft YaHei", "PingFang SC", -apple-system, system-ui, sans-serif;
   --font-mono: "Cascadia Mono", "Consolas", "SF Mono", "Segoe UI Mono", monospace;
-
-  /* 糖果贴纸投影：硬偏移 + 柔和弥散 */
-  --shadow-sticker: 0 4px 0 rgba(255, 93, 143, 0.10), 0 16px 36px rgba(120, 50, 80, 0.22);
-  --shadow-tight: 0 2px 0 rgba(255, 93, 143, 0.08), 0 5px 14px rgba(120, 50, 80, 0.16);
 }
 
-/* 换肤：只替换令牌，所有面板/菜单/气泡同步变色。 */
+/* 换肤：只改令牌，所有面板、菜单、气泡同步。 */
 .dsh-vpet-root[data-theme="mint"] {
-  --cream: #f0fbf7;
-  --cream-2: #e2f7f0;
-  --pink: #15b79e;
-  --pink-deep: #0d8f7c;
-  --pink-soft: rgba(21, 183, 158, 0.15);
-  --mint: #ff9f5a;
-  --mint-soft: rgba(255, 159, 90, 0.18);
-  --grape: #5b8def;
-  --grape-soft: rgba(91, 141, 239, 0.14);
-  --butter: #ffd166;
-  --ink: #24443f;
-  --ink-2: #698c85;
-  --ink-3: #a5c4bd;
-  --line: #ddf4ed;
-  --line-strong: #bfe8dd;
-  --shadow-sticker: 0 4px 0 rgba(21, 183, 158, 0.10), 0 16px 36px rgba(25, 82, 71, 0.20);
-  --shadow-tight: 0 2px 0 rgba(21, 183, 158, 0.08), 0 5px 14px rgba(25, 82, 71, 0.14);
+  --bg: #f7fcfa;
+  --surface-2: #f1f8f5;
+  --surface-3: #e8f3ef;
+  --text: #1f3733;
+  --text-2: #5f7a73;
+  --text-3: #8ba39c;
+  --border: #e4efeb;
+  --border-subtle: #eff7f4;
+  --border-strong: #d2e5de;
+  --accent: #0f8f79;
+  --accent-strong: #0a725f;
+  --accent-soft: rgba(15, 143, 121, 0.09);
+  --accent-softer: rgba(15, 143, 121, 0.05);
+  --mint: #4f7f76;
 }
 
 .dsh-vpet-root[data-theme="ocean"] {
-  --cream: #f1f8ff;
-  --cream-2: #e4f1ff;
-  --pink: #3b82f6;
-  --pink-deep: #2563eb;
-  --pink-soft: rgba(59, 130, 246, 0.15);
-  --mint: #14b8a6;
-  --mint-soft: rgba(20, 184, 166, 0.16);
-  --grape: #8b5cf6;
-  --grape-soft: rgba(139, 92, 246, 0.14);
-  --butter: #fbbf24;
-  --ink: #233a5c;
-  --ink-2: #6d86a7;
-  --ink-3: #a9bdd6;
-  --line: #deecfb;
-  --line-strong: #c2dbf6;
-  --shadow-sticker: 0 4px 0 rgba(59, 130, 246, 0.10), 0 16px 36px rgba(30, 64, 120, 0.20);
-  --shadow-tight: 0 2px 0 rgba(59, 130, 246, 0.08), 0 5px 14px rgba(30, 64, 120, 0.14);
+  --bg: #f7faff;
+  --surface-2: #f1f6fd;
+  --surface-3: #e7f0fb;
+  --text: #22344d;
+  --text-2: #5f748f;
+  --text-3: #8ca0b8;
+  --border: #e3ecf7;
+  --border-subtle: #eef4fb;
+  --border-strong: #cfdff2;
+  --accent: #2f63d9;
+  --accent-strong: #244fb0;
+  --accent-soft: rgba(47, 99, 217, 0.09);
+  --accent-softer: rgba(47, 99, 217, 0.05);
+  --mint: #3f8a86;
 }
 
 .dsh-vpet-root[data-theme="lavender"] {
-  --cream: #faf4ff;
-  --cream-2: #f2e8ff;
-  --pink: #a855f7;
-  --pink-deep: #8338d8;
-  --pink-soft: rgba(168, 85, 247, 0.15);
-  --mint: #ec4899;
-  --mint-soft: rgba(236, 72, 153, 0.15);
-  --grape: #6366f1;
-  --grape-soft: rgba(99, 102, 241, 0.14);
-  --butter: #f9c74f;
-  --ink: #3e2f55;
-  --ink-2: #87759e;
-  --ink-3: #bfb0cf;
-  --line: #f0e4fb;
-  --line-strong: #e2d0f3;
-  --shadow-sticker: 0 4px 0 rgba(168, 85, 247, 0.10), 0 16px 36px rgba(76, 40, 110, 0.22);
-  --shadow-tight: 0 2px 0 rgba(168, 85, 247, 0.08), 0 5px 14px rgba(76, 40, 110, 0.16);
+  --bg: #faf8ff;
+  --surface-2: #f5f1fd;
+  --surface-3: #ede7fa;
+  --text: #332c45;
+  --text-2: #6f6585;
+  --text-3: #9d94b1;
+  --border: #ebe4f7;
+  --border-subtle: #f3eefb;
+  --border-strong: #dcd0ef;
+  --accent: #7253c9;
+  --accent-strong: #5b3fae;
+  --accent-soft: rgba(114, 83, 201, 0.09);
+  --accent-softer: rgba(114, 83, 201, 0.05);
+  --mint: #6f6485;
 }
 
 *,
@@ -151,6 +150,19 @@ body::-webkit-scrollbar,
   height: 0;
 }
 
+h2,
+p {
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
 /* 窗口根节点：绝不参与滚动，宠物/面板拖到任何位置都不会产生第二条滚动条。 */
 .dsh-vpet-root {
   position: fixed;
@@ -158,6 +170,7 @@ body::-webkit-scrollbar,
   overflow: clip;
   overscroll-behavior: none;
   contain: layout paint;
+  color: var(--text);
 }
 
 /* ---------------------------------------------------------------------------
@@ -200,7 +213,7 @@ body::-webkit-scrollbar,
   pointer-events: none;
   user-select: none;
   z-index: 0;
-  transition: opacity 0.15s linear;
+  transition: opacity 150ms linear;
 }
 .dsh-vpet-fallback {
   display: flex;
@@ -213,366 +226,97 @@ body::-webkit-scrollbar,
 }
 
 /* ---------------------------------------------------------------------------
- * 浮层：糖果贴纸（统一基底）
+ * 面板外壳与标题栏
  * ------------------------------------------------------------------------- */
-.dsh-vpet-menu,
 .dsh-vpet-chat,
 .dsh-vpet-settings,
 .dsh-vpet-status,
 .dsh-vpet-diarypanel,
 .dsh-vpet-mempanel,
-.dsh-vpet-reportpanel {
+.dsh-vpet-reportpanel,
+.dsh-vpet-agentpanel {
   position: absolute;
-  /* 顶部糖霜高光（背景不随内容滚动）+ 奶油底 */
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 46%),
-    var(--cream);
-  color: var(--ink);
-  border: 2px solid var(--white);
-  border-radius: 20px;
-  box-shadow: var(--shadow-sticker);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
   pointer-events: auto;
   -webkit-user-select: none;
   user-select: none;
+  animation: dsh-vpet-panel-in 160ms ease-out;
 }
 
-/* 标题下的"糖果条纹"下划线——签名元素 */
-.dsh-vpet-settings-title,
-.dsh-vpet-chat-head > span:first-child {
-  position: relative;
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0.2px;
+.dsh-vpet-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 13px 14px 11px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.dsh-vpet-settings-title::after,
-.dsh-vpet-chat-head > span:first-child::after {
-  content: "";
-  position: absolute;
-  left: 1px;
-  bottom: -5px;
-  width: 58%;
-  height: 5px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--pink), var(--mint));
+.dsh-vpet-panel-head:active {
+  cursor: grabbing;
 }
-
-/* ---------------------------------------------------------------------------
- * 气泡 / 专注徽标
- * ------------------------------------------------------------------------- */
-.dsh-vpet-bubble {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 12px;
-  max-width: 340px;
-  min-width: 36px;
-  background: var(--white);
-  color: var(--ink);
-  border: 2px solid var(--white);
-  border-radius: 16px;
-  padding: 10px 14px;
-  font-size: 13px;
-  line-height: 1.6;
-  box-shadow: var(--shadow-tight);
-  white-space: pre-wrap;
-  word-break: break-word;
-  text-align: left;
-  pointer-events: none;
-  animation: dsh-vpet-pop-x 0.16s ease-out;
-}
-.dsh-vpet-bubble::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top-color: var(--white);
-}
-.dsh-vpet-bubble-down {
-  bottom: auto;
-  top: 100%;
-  margin-top: 12px;
-  margin-bottom: 0;
-}
-.dsh-vpet-bubble-down::after {
-  top: auto;
-  bottom: 100%;
-  border-top-color: transparent;
-  border-bottom-color: var(--white);
-}
-.dsh-vpet-focusbadge {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 12px;
-  background: var(--white);
-  color: var(--ink);
-  border: 2px solid var(--white);
-  border-radius: 14px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  line-height: 1.4;
-  box-shadow: var(--shadow-tight);
-  white-space: nowrap;
-  pointer-events: none;
-  animation: dsh-vpet-pop-x 0.16s ease-out;
-}
-
-/* ---------------------------------------------------------------------------
- * 右键菜单
- * ------------------------------------------------------------------------- */
-.dsh-vpet-menu {
-  top: auto;
-  left: 0;
-  right: auto;
-  bottom: 100%;
-  transform: none;
-  margin-bottom: 10px;
-  width: 320px;
-  max-height: none;
-  /* 菜单不再是滚动容器：紧凑双列布局，彻底消除宠物旁边“第二条滚动条”。 */
-  overflow: hidden;
+.dsh-vpet-panel-icon {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-  padding: 8px;
-  z-index: 20;
-  animation: dsh-vpet-settings-in 0.15s ease-out;
-  scrollbar-width: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1;
 }
-/* 靠近屏幕上沿时向下展开，避免菜单被裁切后看起来像一条多余滚动区域。 */
-.dsh-vpet-menu.dsh-vpet-menu-down {
-  top: 100%;
-  bottom: auto;
-  margin-top: 10px;
-  margin-bottom: 0;
+.dsh-vpet-panel-titles {
+  flex: 1 1 auto;
+  min-width: 0;
 }
-/* 靠近屏幕右沿时改为右对齐，菜单始终完整可见。 */
-.dsh-vpet-menu.dsh-vpet-menu-left {
-  left: auto;
-  right: 0;
+.dsh-vpet-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  text-wrap: balance;
 }
-.dsh-vpet-menu-item {
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  color: var(--ink);
-  font-weight: 700;
+.dsh-vpet-panel-subtitle {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12.5px;
-  cursor: pointer;
+  text-wrap: pretty;
 }
-.dsh-vpet-menu-item:hover {
-  background: var(--pink-soft);
-  border-color: var(--pink);
-  color: var(--pink-deep);
-}
-.dsh-vpet-menu-sep {
-  grid-column: 1 / -1;
-  height: 1px;
-  margin: 5px 8px;
-  background: var(--line);
-}
-
-/* ---------------------------------------------------------------------------
- * 聊天面板
- * ------------------------------------------------------------------------- */
-.dsh-vpet-chat {
-  width: 380px;
-  max-height: 420px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  overflow: hidden;
-  padding: 14px;
-  animation: dsh-vpet-chat-in 0.18s ease-out;
-}
-.dsh-vpet-chat-head,
-.dsh-vpet-settings-head,
-.dsh-vpet-diarypanel-head,
-.dsh-vpet-mempanel-head,
-.dsh-vpet-status-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 30px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: var(--ink);
-  cursor: grab;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-}
-.dsh-vpet-chat-head:active,
-.dsh-vpet-settings-head:active,
-.dsh-vpet-diarypanel-head:active,
-.dsh-vpet-mempanel-head:active,
-.dsh-vpet-status-head:active {
-  cursor: grabbing;
-}
-.dsh-vpet-chat-close,
-.dsh-vpet-settings-close {
-  appearance: none;
-  border: 0;
-  background: var(--pink-soft);
-  color: var(--pink-deep);
-  font-size: 14px;
-  line-height: 1;
-  padding: 5px 8px;
-  border-radius: 9px;
-  cursor: pointer;
-  font-weight: 700;
-}
-.dsh-vpet-chat-close:hover,
-.dsh-vpet-settings-close:hover {
-  background: var(--pink);
-  color: #fff;
-}
-.dsh-vpet-chat-log {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  font-size: 13px;
-  line-height: 1.55;
-  padding: 2px 2px 2px 0;
-  scroll-behavior: smooth;
-}
-.dsh-vpet-chat-log::-webkit-scrollbar {
-  width: 6px;
-}
-.dsh-vpet-chat-log::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 3px;
-}
-.dsh-vpet-chat-msg {
-  padding: 8px 13px;
-  border-radius: 16px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-width: 85%;
-  animation: dsh-vpet-msg-in 0.18s ease-out;
-}
-.dsh-vpet-chat-u {
-  align-self: flex-end;
-  background: var(--pink);
-  color: #fff;
-  border-bottom-right-radius: 6px;
-}
-.dsh-vpet-chat-a {
-  align-self: flex-start;
-  background: var(--white);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-bottom-left-radius: 6px;
-}
-.dsh-vpet-chat-cursor {
-  display: inline-block;
-  margin-left: 1px;
-  color: var(--pink);
-  animation: dsh-vpet-blink 0.8s steps(2, start) infinite;
-}
-.dsh-vpet-chat-thinking {
-  color: var(--ink-3);
-  font-style: normal;
-}
-.dsh-vpet-chat-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.dsh-vpet-chat-mic {
+.dsh-vpet-panel-close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border: 2px solid var(--line-strong);
-  border-radius: 12px;
-  background: var(--white);
-  color: var(--ink);
-  font-size: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
-  touch-action: none;
+  transition: background-color 120ms ease, color 120ms ease;
 }
-.dsh-vpet-chat-mic:hover:not(:disabled) {
-  border-color: var(--pink);
-  background: var(--pink-soft);
-}
-.dsh-vpet-chat-mic.is-recording {
-  color: #fff;
-  background: var(--danger);
-  border-color: var(--danger);
-  animation: dsh-vpet-mic-pulse 1s ease-in-out infinite;
-}
-.dsh-vpet-chat-mic:disabled {
-  opacity: 0.42;
-  cursor: not-allowed;
-}
-.dsh-vpet-chat-voicehint {
-  font-size: 11px;
-  color: var(--ink-2);
-  line-height: 1.4;
-  margin-top: -2px;
-}
-.dsh-vpet-chat-input {
-  flex: 1;
-  border: 2px solid var(--line-strong);
-  background: var(--white);
-  color: var(--ink);
-  border-radius: 12px;
-  padding: 8px 12px;
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  min-width: 0;
-}
-.dsh-vpet-chat-input:focus {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--pink-soft);
-}
-.dsh-vpet-chat-btn {
-  border: none;
-  background: var(--pink);
-  color: #fff;
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 2px 0 var(--pink-deep);
-}
-.dsh-vpet-chat-btn:hover:not(:disabled) {
-  background: var(--pink-deep);
-}
-.dsh-vpet-chat-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* ---------------------------------------------------------------------------
- * 设置面板
- * ------------------------------------------------------------------------- */
-.dsh-vpet-settings {
-  width: 400px;
-  max-height: min(600px, calc(100% - 24px));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 14px;
-  animation: dsh-vpet-settings-in 0.18s ease-out;
+.dsh-vpet-panel-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .dsh-vpet-panel-body {
@@ -581,413 +325,1392 @@ body::-webkit-scrollbar,
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding-right: 2px;
+  padding: 6px 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
-
 .dsh-vpet-panel-body::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 .dsh-vpet-panel-body::-webkit-scrollbar-track {
   background: transparent;
 }
 .dsh-vpet-panel-body::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 4px;
+  background: var(--border-strong);
+  border-radius: 999px;
 }
 .dsh-vpet-panel-body::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-3);
+  background: var(--text-3);
 }
-.dsh-vpet-settings-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+
+/* ---------------------------------------------------------------------------
+ * 气泡 / 工作搭子徽标
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  max-width: 300px;
+  min-width: 36px;
+  padding: 9px 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-float);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  text-wrap: pretty;
+  pointer-events: none;
+  animation: dsh-vpet-pop-x 140ms ease-out;
 }
-.dsh-vpet-settings-grip {
-  color: var(--ink-3);
-  font-size: 14px;
-  letter-spacing: 2px;
+.dsh-vpet-bubble::after {
+  content: "";
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--surface);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  transform: translateX(-50%) rotate(45deg);
 }
-.dsh-vpet-sec-head {
+.dsh-vpet-bubble-down {
+  bottom: auto;
+  top: 100%;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+.dsh-vpet-bubble-down::after {
+  top: -4px;
+  bottom: auto;
+  border: 0;
+  border-left: 1px solid var(--border-strong);
+  border-top: 1px solid var(--border-strong);
+}
+
+.dsh-vpet-agentbubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(340px, calc(100vw - 24px));
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+  animation: dsh-vpet-pop-x 140ms ease-out;
+}
+.dsh-vpet-agentbubble::after {
+  content: "";
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--surface);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+.dsh-vpet-agentbubble-down {
+  bottom: auto;
+  top: 100%;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+.dsh-vpet-agentbubble-down::after {
+  top: -4px;
+  bottom: auto;
+  border: 0;
+  border-left: 1px solid var(--border-strong);
+  border-top: 1px solid var(--border-strong);
+}
+.dsh-vpet-agentbubble.is-approval {
+  border-color: var(--warning);
+}
+.dsh-vpet-agentbubble.is-failure {
+  border-color: var(--danger);
+}
+.dsh-vpet-agentbubble.is-success {
+  border-color: var(--success);
+}
+.dsh-vpet-agentbubble-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 10px;
-  margin: 2px 0;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.dsh-vpet-agentbubble-text {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  text-wrap: pretty;
+}
+.dsh-vpet-agentbubble-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+.dsh-vpet-agentbubble-actions button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  background: var(--cream-2);
-  -webkit-user-select: none;
-  user-select: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.dsh-vpet-agentbubble-actions button:hover {
+  background: var(--surface-2);
+  border-color: var(--text-3);
+}
+.dsh-vpet-agentbubble-actions button:first-child {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.dsh-vpet-agentbubble-actions button:first-child:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.dsh-vpet-agentchip {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 210px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-float);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.dsh-vpet-agentchip.is-approval {
+  color: var(--warning);
+  border-color: var(--warning);
+  background: var(--warning-soft);
+}
+.dsh-vpet-agentchip-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--success);
+}
+.dsh-vpet-agentchip.is-approval .dsh-vpet-agentchip-dot {
+  background: var(--warning);
+}
+.dsh-vpet-focusbadge {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow-float);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: dsh-vpet-pop-x 140ms ease-out;
+}
+
+/* ---------------------------------------------------------------------------
+ * 右键菜单
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-menu {
+  position: absolute;
+  top: auto;
+  left: 0;
+  right: auto;
+  bottom: 100%;
+  transform: none;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  width: 312px;
+  margin-bottom: 8px;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
+  pointer-events: auto;
+  animation: dsh-vpet-menu-in 140ms ease-out;
+}
+.dsh-vpet-menu.dsh-vpet-menu-down {
+  top: 100%;
+  bottom: auto;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+.dsh-vpet-menu.dsh-vpet-menu-left {
+  left: auto;
+  right: 0;
+}
+.dsh-vpet-menu-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 450;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.dsh-vpet-menu-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.dsh-vpet-menu-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+ * 聊天
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-chat {
+  width: 392px;
+  max-height: min(560px, calc(100% - 24px));
+}
+.dsh-vpet-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px 16px 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  font-size: 12.5px;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.dsh-vpet-chat-log::-webkit-scrollbar {
+  width: 6px;
+}
+.dsh-vpet-chat-log::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+.dsh-vpet-chat-msg {
+  max-width: 84%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-wrap: pretty;
+  animation: dsh-vpet-msg-in 140ms ease-out;
+}
+.dsh-vpet-chat-u {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-bottom-right-radius: 5px;
+}
+.dsh-vpet-chat-a {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 5px;
+}
+.dsh-vpet-chat-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  color: var(--accent);
+  animation: dsh-vpet-blink 800ms steps(2, start) infinite;
+}
+.dsh-vpet-chat-thinking {
+  color: var(--text-3);
+}
+.dsh-vpet-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 10px 16px 14px;
+}
+.dsh-vpet-chat-mic {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.dsh-vpet-chat-mic:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--text-3);
+  color: var(--text);
+}
+.dsh-vpet-chat-mic.is-recording {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  animation: dsh-vpet-mic-pulse 1s ease-in-out infinite;
+}
+.dsh-vpet-chat-mic:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.dsh-vpet-chat-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.dsh-vpet-chat-input::placeholder {
+  color: var(--text-3);
+}
+.dsh-vpet-chat-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.dsh-vpet-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.dsh-vpet-chat-btn:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.dsh-vpet-chat-btn:disabled {
+  background: var(--surface-3);
+  border-color: var(--border);
+  color: var(--text-3);
+  cursor: default;
+}
+.dsh-vpet-chat-voicehint {
+  padding: 0 16px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * 设置
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-settings {
+  width: 424px;
+  max-height: min(620px, calc(100% - 24px));
+}
+.dsh-vpet-settings .dsh-vpet-panel-body {
+  padding-top: 2px;
+}
+.dsh-vpet-sec-head {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.dsh-vpet-settings .dsh-vpet-panel-body > div:first-child > .dsh-vpet-sec-head {
+  border-top-color: transparent;
 }
 .dsh-vpet-sec-head:hover {
-  background: var(--pink-soft);
-  border-color: var(--pink);
-  color: var(--pink-deep);
+  color: var(--text);
 }
 .dsh-vpet-sec-arrow {
-  width: 12px;
-  color: var(--ink-2);
-  font-size: 11px;
+  width: 10px;
+  flex: 0 0 auto;
+  color: var(--text-3);
+  font-size: 9px;
+  line-height: 1;
 }
 .dsh-vpet-sec-label {
-  flex: 1;
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 .dsh-vpet-sec-body {
-  padding: 2px 4px 6px 10px;
-  border-left: 2px dashed var(--line-strong);
-  margin-left: 5px;
+  padding: 2px 0 12px 18px;
 }
 .dsh-vpet-settings-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 6px 0;
+  gap: 12px;
+  min-height: 36px;
+  padding: 4px 0;
 }
 .dsh-vpet-settings-label {
-  font-size: 13px;
+  flex: 0 0 auto;
+  font-size: 12.5px;
   line-height: 1.4;
+  color: var(--text-2);
   white-space: nowrap;
 }
-.dsh-vpet-settings-row input[type="range"] {
-  flex: 1;
+.dsh-vpet-settings-v {
   min-width: 0;
-  accent-color: var(--pink);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-word;
+}
+.dsh-vpet-settings-row > span:last-child > button + button {
+  margin-left: 6px;
+}
+.dsh-vpet-settings-row-range {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  row-gap: 7px;
+  padding: 6px 0 8px;
+}
+.dsh-vpet-settings-row-range > input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.dsh-vpet-settings-row-block {
+  display: block;
+  padding: 6px 0 4px;
+}
+.dsh-vpet-settings-row-range > .dsh-vpet-settings-label {
+  color: var(--text);
 }
 .dsh-vpet-settings-btn {
-  border: 1px solid var(--line-strong);
-  background: var(--white);
-  color: var(--ink);
-  border-radius: 10px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
   font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 .dsh-vpet-settings-btn:hover:not(:disabled) {
-  background: var(--pink-soft);
-  border-color: var(--pink);
-  color: var(--pink-deep);
+  background: var(--surface-2);
+  border-color: var(--text-3);
 }
 .dsh-vpet-settings-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  background: var(--cream-2);
-  color: var(--ink-3);
 }
 .dsh-vpet-settings-btn.is-active {
-  border-color: var(--pink);
-  color: var(--pink-deep);
-  background: var(--pink-soft);
-  box-shadow: 0 0 0 2px var(--pink-soft);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.dsh-vpet-btn-danger {
+  color: var(--danger);
+  border-color: rgba(197, 61, 69, 0.32);
+}
+.dsh-vpet-btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.dsh-vpet-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-3);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.dsh-vpet-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(47, 36, 48, 0.22);
+  transition: transform 140ms ease;
+}
+.dsh-vpet-switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dsh-vpet-switch[aria-checked="true"] .dsh-vpet-switch-knob {
+  transform: translateX(18px);
+}
+.dsh-vpet-switch:hover {
+  border-color: var(--text-3);
+}
+
+.dsh-vpet-name-input {
+  flex: 1 1 200px;
+  max-width: 64%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.dsh-vpet-name-input::placeholder {
+  color: var(--text-3);
+}
+.dsh-vpet-name-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.dsh-vpet-name-input[type="date"] {
+  height: 32px;
+  cursor: pointer;
+}
+.dsh-vpet-name-input[type="time"] {
+  flex: 0 1 96px;
+  max-width: 96px;
+  height: 32px;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+textarea.dsh-vpet-name-input {
+  max-width: none;
+  height: auto;
+  padding: 8px 10px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.dsh-vpet-settings-hint {
+  padding: 5px 0 7px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  text-wrap: pretty;
 }
 .dsh-vpet-scene-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  flex: 1;
+  gap: 2px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
 }
-.dsh-vpet-settings-sep {
-  height: 1px;
-  margin: 10px 0;
-  background: var(--line);
+.dsh-vpet-scene-grid .dsh-vpet-settings-btn {
+  height: 26px;
+  padding: 0 4px;
+  border-color: transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  box-shadow: none;
 }
-.dsh-vpet-settings-hint {
-  font-size: 12px;
-  color: var(--ink-2);
-  padding: 4px 0;
+.dsh-vpet-scene-grid .dsh-vpet-settings-btn:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text);
 }
+.dsh-vpet-scene-grid .dsh-vpet-settings-btn.is-active {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--accent-strong);
+  box-shadow: 0 1px 2px rgba(47, 36, 48, 0.07);
+}
+
 .dsh-vpet-theme-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  padding: 4px 0 6px;
+  padding: 2px 0 4px;
 }
 .dsh-vpet-theme-card {
   appearance: none;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 7px;
   min-width: 0;
-  padding: 8px 9px;
-  border: 2px solid var(--line);
+  padding: 7px;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--white);
-  color: var(--ink);
+  background: var(--surface);
+  color: var(--text);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 .dsh-vpet-theme-card:hover {
-  border-color: var(--line-strong);
-  background: var(--cream-2);
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+  box-shadow: 0 2px 8px rgba(47, 36, 48, 0.07);
 }
-.dsh-vpet-theme-card.is-active {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--pink-soft);
+.dsh-vpet-theme-card:active {
+  transform: translateY(0);
 }
-.dsh-vpet-theme-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 700;
+.dsh-vpet-theme-card.is-active,
+.dsh-vpet-theme-card[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
-.dsh-vpet-theme-dots {
-  display: inline-flex;
-  gap: 3px;
-  flex: 0 0 auto;
-}
-.dsh-vpet-theme-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-}
-.dsh-vpet-settings-v {
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.dsh-vpet-trash {
+.dsh-vpet-theme-preview {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 6px;
+  padding: 7px 7px 8px;
+  border: 1px solid var(--t-border);
+  border-radius: 7px;
+  background: var(--t-bg);
+}
+.dsh-vpet-theme-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1px;
+}
+.dsh-vpet-theme-preview-title {
+  width: 34%;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--t-accent);
+  opacity: 0.85;
+}
+.dsh-vpet-theme-preview-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--t-border);
+}
+.dsh-vpet-theme-preview-bubble {
+  width: 74%;
+  height: 15px;
+  border: 1px solid var(--t-border);
+  border-radius: 5px;
+  background: var(--t-surface);
+}
+.dsh-vpet-theme-preview-line {
+  width: 100%;
+  height: 3.5px;
+  border-radius: 2px;
+  background: var(--t-soft);
+}
+.dsh-vpet-theme-preview-line.is-short {
+  width: 58%;
+}
+.dsh-vpet-theme-preview-pill {
+  width: 30px;
+  height: 8px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--t-accent);
+  opacity: 0.9;
+}
+.dsh-vpet-theme-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 2px 1px;
+}
+.dsh-vpet-theme-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.dsh-vpet-theme-emoji {
+  flex: 0 0 auto;
+  font-size: 11px;
+  line-height: 1;
+}
+.dsh-vpet-theme-check {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+.dsh-vpet-theme-desc {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-vpet-trash {
+  display: flex;
+  flex-direction: column;
 }
 .dsh-vpet-trash-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 4px 0;
+  min-height: 34px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.dsh-vpet-trash-item:last-child {
+  border-bottom: 0;
 }
 .dsh-vpet-trash-name {
-  flex: 1;
-  font-size: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ink-2);
+  font-size: 11.5px;
+  color: var(--text-2);
 }
 .dsh-vpet-trash-actions {
   display: flex;
   gap: 4px;
-  flex-shrink: 0;
-}
-.dsh-vpet-btn-danger {
-  color: var(--danger);
-  border-color: rgba(229, 72, 77, 0.4);
-}
-.dsh-vpet-btn-danger:hover {
-  background: var(--danger-soft);
-  border-color: var(--danger);
-  color: var(--danger);
+  flex: 0 0 auto;
 }
 .dsh-vpet-name-row {
   display: flex;
-  gap: 6px;
   align-items: center;
-  flex: 1;
+  gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
 }
-.dsh-vpet-name-input {
-  flex: 1;
-  min-width: 0;
-  border: 2px solid var(--line-strong);
-  background: var(--white);
-  color: var(--ink);
-  border-radius: 10px;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
+
+.dsh-vpet-empty-icon {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 26px;
+  line-height: 1;
 }
-.dsh-vpet-name-input:focus {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--pink-soft);
+.dsh-vpet-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
 }
-.dsh-vpet-name-input[type="date"] {
-  height: 30px;
-  cursor: pointer;
+.dsh-vpet-empty-desc {
+  max-width: 250px;
+  margin: 4px auto 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  text-wrap: pretty;
 }
-.dsh-vpet-name-input[type="time"] {
-  flex: 0 1 96px;
-  height: 30px;
-  padding: 3px 6px;
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
+.dsh-vpet-empty-desc + .dsh-vpet-settings-btn {
+  margin-top: 10px;
 }
 
 /* ---------------------------------------------------------------------------
- * 状态面板
+ * 状态
  * ------------------------------------------------------------------------- */
 .dsh-vpet-status {
-  width: 320px;
-  max-height: min(520px, calc(100% - 24px));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 14px;
-  animation: dsh-vpet-settings-in 0.18s ease-out;
+  width: 336px;
+  max-height: min(560px, calc(100% - 24px));
 }
 .dsh-vpet-status-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding: 5px 0;
+  min-height: 30px;
+  padding: 3px 0;
 }
 .dsh-vpet-status-k {
+  flex: 0 0 auto;
   font-size: 12px;
-  color: var(--ink-2);
+  color: var(--text-2);
   white-space: nowrap;
 }
 .dsh-vpet-status-v {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--text);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
 }
 .dsh-vpet-status-track {
-  flex: 1;
-  height: 8px;
-  border-radius: 5px;
-  background: var(--cream-2);
-  overflow: hidden;
+  flex: 1 1 auto;
   min-width: 40px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
 }
 .dsh-vpet-status-fill {
+  display: block;
   height: 100%;
-  border-radius: 5px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 .dsh-vpet-status-sep {
   height: 1px;
-  margin: 8px 0;
-  background: var(--line);
+  margin: 9px 0;
+  background: var(--border);
 }
 .dsh-vpet-relation-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0 6px;
+  gap: 9px;
+  margin: 2px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
 }
 .dsh-vpet-relation-emoji {
-  font-size: 24px;
+  font-size: 22px;
+  line-height: 1;
 }
 .dsh-vpet-relation-name {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 600;
 }
 .dsh-vpet-relation-accessory {
   margin-left: auto;
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1;
 }
 .dsh-vpet-relation-hint {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  text-wrap: pretty;
 }
 .dsh-vpet-relation-collection {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 6px 0 2px;
+  margin: 7px 0 3px;
 }
 .dsh-vpet-relation-chip {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   padding: 2px 7px;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--line);
-  color: var(--ink-2);
+  background: var(--surface-2);
+  color: var(--text-3);
   font-size: 10px;
-  opacity: 0.45;
+  opacity: 0.62;
 }
 .dsh-vpet-relation-chip.is-unlocked {
-  background: var(--pink-soft);
-  color: var(--pink-deep);
-  font-weight: 700;
+  border-color: var(--accent-soft);
+  background: var(--accent-softer);
+  color: var(--accent-strong);
+  font-weight: 600;
   opacity: 1;
 }
 .dsh-vpet-status-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 6px;
+  gap: 5px;
+  margin-top: 7px;
 }
 .dsh-vpet-status-grid span {
-  font-size: 12px;
-  padding: 5px 6px;
-  border-radius: 10px;
-  background: var(--cream-2);
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+  font-size: 11.5px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
-
-/* ---------------------------------------------------------------------------
- * 成就
- * ------------------------------------------------------------------------- */
 .dsh-vpet-ach-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 6px;
+  gap: 5px;
+  margin-top: 7px;
 }
 .dsh-vpet-ach-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 8px 4px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
+  padding: 8px 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
   text-align: center;
 }
 .dsh-vpet-ach-on {
-  background: var(--cream-2);
+  border-color: var(--accent-soft);
+  background: var(--accent-softer);
 }
 .dsh-vpet-ach-off {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 .dsh-vpet-ach-icon {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
 }
 .dsh-vpet-ach-name {
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: 10px;
+  line-height: 1.25;
+  color: var(--text);
 }
 .dsh-vpet-ach-prog {
-  font-size: 10px;
-  color: var(--ink-2);
+  font-size: 9.5px;
+  color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
 
 /* ---------------------------------------------------------------------------
- * 日记 / 记忆面板
+ * 工作搭子
  * ------------------------------------------------------------------------- */
-.dsh-vpet-diarypanel,
-.dsh-vpet-mempanel,
-.dsh-vpet-reportpanel {
+.dsh-vpet-agentpanel {
   width: 400px;
-  max-height: min(600px, calc(100% - 24px));
+  max-height: min(620px, calc(100% - 24px));
+}
+.dsh-vpet-agent-hub {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.dsh-vpet-agent-hub.is-online {
+  border-color: rgba(31, 143, 108, 0.32);
+  background: var(--success-soft);
+}
+.dsh-vpet-agent-hub-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.dsh-vpet-agent-hub-row strong {
+  font-weight: 600;
+}
+.dsh-vpet-agent-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.dsh-vpet-agent-hub.is-online .dsh-vpet-agent-dot {
+  background: var(--success);
+}
+.dsh-vpet-agent-mono {
+  margin-top: 7px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  word-break: break-all;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.dsh-vpet-agent-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dsh-vpet-agent-section-title {
+  margin: 14px 0 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.dsh-vpet-agent-sims {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.dsh-vpet-agent-sims .dsh-vpet-settings-btn {
+  justify-content: flex-start;
+  height: 32px;
+}
+.dsh-vpet-agent-events {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  padding: 14px;
-  animation: dsh-vpet-settings-in 0.18s ease-out;
+  gap: 6px;
+}
+.dsh-vpet-agent-event {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.dsh-vpet-agent-event:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.dsh-vpet-agent-event.is-error {
+  border-color: rgba(197, 61, 69, 0.34);
+  background: var(--danger-soft);
+}
+.dsh-vpet-agent-event-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+.dsh-vpet-agent-event-provider {
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.dsh-vpet-agent-event-kind {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.dsh-vpet-agent-event-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.dsh-vpet-agent-event-title {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.dsh-vpet-agent-event-detail {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+  word-break: break-word;
+  text-wrap: pretty;
+}
+.dsh-vpet-agent-link {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.dsh-vpet-agent-link:hover {
+  text-decoration: underline;
+}
+.dsh-vpet-agent-help {
+  margin-top: 14px;
+  padding: 9px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.dsh-vpet-agent-help summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text);
+}
+.dsh-vpet-agent-help code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 日记 / 记忆 / 报告
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-diarypanel,
+.dsh-vpet-mempanel {
+  width: 404px;
+  max-height: min(600px, calc(100% - 24px));
 }
 .dsh-vpet-reportpanel {
   width: 420px;
+  max-height: min(620px, calc(100% - 24px));
+}
+.dsh-vpet-diarypanel-intro {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  margin: 10px 0 7px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.dsh-vpet-diarypanel-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 16px;
+  margin-bottom: 10px;
+}
+.dsh-vpet-diarypanel-toolbar textarea {
+  flex: 1 1 auto;
+}
+.dsh-vpet-diarypanel-toolbar .dsh-vpet-chat-btn {
+  height: 34px;
+  min-width: 54px;
+}
+.dsh-vpet-diarypanel-list,
+.dsh-vpet-mem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 16px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.dsh-vpet-diarypanel-list::-webkit-scrollbar,
+.dsh-vpet-mem-list::-webkit-scrollbar {
+  width: 6px;
+}
+.dsh-vpet-diarypanel-list::-webkit-scrollbar-thumb,
+.dsh-vpet-mem-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+.dsh-vpet-diarypanel-empty,
+.dsh-vpet-mem-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--text-2);
+}
+.dsh-vpet-diarycard {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.dsh-vpet-diarycard::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+.dsh-vpet-diarycard-date {
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.dsh-vpet-diarycard-text {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-wrap: pretty;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.dsh-vpet-mem-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  margin: 10px 0;
+}
+.dsh-vpet-mem-add .dsh-vpet-name-input {
+  max-width: none;
+}
+.dsh-vpet-mem-select {
+  height: 32px;
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11.5px;
+  outline: none;
+}
+.dsh-vpet-mem-add .dsh-vpet-chat-btn {
+  height: 32px;
+  padding: 0 11px;
+}
+.dsh-vpet-mem-item {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.dsh-vpet-mem-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.dsh-vpet-mem-cat {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent-softer);
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 500;
+}
+.dsh-vpet-mem-del {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.dsh-vpet-mem-del:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.dsh-vpet-mem-content {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-wrap: pretty;
+  -webkit-user-select: text;
+  user-select: text;
 }
 .dsh-vpet-report-toolbar {
   display: flex;
@@ -995,14 +1718,18 @@ body::-webkit-scrollbar,
   gap: 8px;
   margin-bottom: 10px;
 }
-.dsh-vpet-report-toolbar select {
-  flex: 1;
+.dsh-vpet-report-toolbar .dsh-vpet-name-input {
+  flex: 1 1 auto;
+  max-width: none;
+}
+.dsh-vpet-report-toolbar .dsh-vpet-chat-btn {
+  height: 32px;
 }
 .dsh-vpet-reportcard {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--white);
-  padding: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
 }
 .dsh-vpet-reportcard-top {
   display: flex;
@@ -1012,239 +1739,99 @@ body::-webkit-scrollbar,
   margin-bottom: 12px;
 }
 .dsh-vpet-reportcard-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  text-wrap: balance;
 }
 .dsh-vpet-reportcard-date {
   margin-top: 3px;
-  font-size: 11px;
-  color: var(--ink-2);
+  font-size: 10.5px;
   font-family: var(--font-mono);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
 }
 .dsh-vpet-report-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 4px;
 }
 .dsh-vpet-report-stat {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 8px 5px;
-  border-radius: 11px;
-  background: var(--cream-2);
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
   text-align: center;
   font-size: 10px;
-  color: var(--ink-2);
+  color: var(--text-2);
 }
 .dsh-vpet-report-stat strong {
-  color: var(--ink);
   font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .dsh-vpet-report-section {
-  padding: 10px 0;
-  border-top: 1px dashed var(--line);
+  padding-top: 11px;
+  margin-top: 11px;
+  border-top: 1px solid var(--border);
 }
 .dsh-vpet-report-section-title {
   margin-bottom: 5px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--pink-deep);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
 }
 .dsh-vpet-report-section-text {
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
+  text-wrap: pretty;
+  -webkit-user-select: text;
+  user-select: text;
 }
 .dsh-vpet-report-mood {
-  margin-top: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--pink-soft);
-  color: var(--ink);
+  padding: 9px 11px;
+  margin-top: 13px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px 9px 9px 4px;
+  background: var(--accent-softer);
+  color: var(--text);
   font-size: 12px;
-  line-height: 1.6;
-}
-.dsh-vpet-diarypanel-toolbar {
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.dsh-vpet-diarypanel-toolbar textarea {
-  resize: vertical;
-  line-height: 1.6;
-  flex: 1;
-  border: 2px solid var(--line-strong);
-  background: var(--white);
-  color: var(--ink);
-  border-radius: 12px;
-  padding: 8px 10px;
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-}
-.dsh-vpet-diarypanel-toolbar textarea:focus {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--pink-soft);
-}
-.dsh-vpet-diarypanel-toolbar .dsh-vpet-chat-btn {
-  min-width: 58px;
-}
-.dsh-vpet-diarypanel-intro {
-  display: flex;
-  justify-content: space-between;
-  color: var(--ink-2);
-  font-size: 12px;
-  margin: 0 0 7px;
-}
-.dsh-vpet-diarypanel-list,
-.dsh-vpet-mem-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  padding-right: 4px;
-  padding-bottom: 4px;
-  flex: 1;
-  min-height: 0;
-}
-.dsh-vpet-diarypanel-list::-webkit-scrollbar,
-.dsh-vpet-mem-list::-webkit-scrollbar {
-  width: 8px;
-}
-.dsh-vpet-diarypanel-list::-webkit-scrollbar-thumb,
-.dsh-vpet-mem-list::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 4px;
-}
-.dsh-vpet-diarypanel-empty,
-.dsh-vpet-mem-empty {
-  font-size: 13px;
-  color: var(--ink-2);
-  text-align: center;
-  padding: 36px 14px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-}
-.dsh-vpet-diarycard {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: var(--white);
-}
-.dsh-vpet-diarycard::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 14px;
-  bottom: 14px;
-  width: 5px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--pink), var(--mint));
-}
-.dsh-vpet-diarycard-date {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-2);
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
-  font-family: var(--font-mono);
-}
-.dsh-vpet-diarycard-text {
-  font-size: 13px;
-  line-height: 1.75;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--ink);
-}
-.dsh-vpet-mem-add {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.dsh-vpet-mem-select {
-  flex-shrink: 0;
-  border: 2px solid var(--line-strong);
-  background: var(--white);
-  color: var(--ink);
-  border-radius: 10px;
-  padding: 5px 6px;
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
-}
-.dsh-vpet-mem-item {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: var(--white);
-}
-.dsh-vpet-mem-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.dsh-vpet-mem-cat {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-2);
-  letter-spacing: 0.3px;
-}
-.dsh-vpet-mem-del {
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  color: var(--ink-3);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 6px;
-  line-height: 1;
-}
-.dsh-vpet-mem-del:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-.dsh-vpet-mem-content {
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--ink);
+  line-height: 1.65;
+  text-wrap: pretty;
 }
 
 /* ---------------------------------------------------------------------------
- * 成就 toast / 粒子 / 还原按钮
+ * 成就 / 粒子 / 还原按钮
  * ------------------------------------------------------------------------- */
 .dsh-vpet-achtoast {
   position: absolute;
   right: 16px;
-  bottom: 40px;
+  bottom: 20px;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--white);
-  color: var(--ink);
-  border: 2px solid var(--white);
-  border-radius: 14px;
-  padding: 10px 16px;
-  font-size: 13px;
-  box-shadow: var(--shadow-tight);
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-float);
+  font-size: 12.5px;
   pointer-events: none;
-  animation: dsh-vpet-toast-in 0.3s ease-out;
+  animation: dsh-vpet-toast-in 180ms ease-out;
 }
 .dsh-vpet-achtoast-icon {
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
 }
 .dsh-vpet-particle {
@@ -1261,107 +1848,113 @@ body::-webkit-scrollbar,
 }
 .dsh-vpet-accessory {
   position: absolute;
-  right: 5%;
   top: 1%;
+  right: 5%;
   z-index: 4;
   font-size: clamp(16px, 5vw, 30px);
   line-height: 1;
   pointer-events: none;
-  filter: drop-shadow(0 2px 3px rgba(63, 44, 72, 0.24));
-  animation: dsh-vpet-accessory-float 3.4s ease-in-out infinite;
+  filter: drop-shadow(0 2px 3px rgba(47, 36, 48, 0.22));
+  animation: dsh-vpet-accessory-float 4s ease-in-out infinite;
 }
 .dsh-vpet-restore {
   position: absolute;
   right: 20px;
   bottom: 20px;
+  z-index: 5;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 26px;
-  background: var(--pink);
-  color: var(--white);
-  border: 2px solid var(--white);
-  font-size: 16px;
-  font-weight: 600;
+  gap: 7px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
   font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: var(--shadow-sticker);
+  box-shadow: var(--shadow-float);
   pointer-events: auto;
-}
-.dsh-vpet-restore-icon {
-  font-size: 24px;
-  line-height: 1;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 .dsh-vpet-restore:hover {
-  transform: scale(1.05);
-  background: var(--pink-deep);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.dsh-vpet-restore-icon {
+  font-size: 17px;
+  line-height: 1;
+}
+.dsh-vpet-restore-text {
+  line-height: 1;
 }
 
 /* ---------------------------------------------------------------------------
- * 动画
+ * 动画（只动 transform / opacity）
  * ------------------------------------------------------------------------- */
+@keyframes dsh-vpet-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dsh-vpet-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dsh-vpet-pop-x {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+@keyframes dsh-vpet-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dsh-vpet-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 @keyframes dsh-vpet-rise {
   0% {
     opacity: 0;
-    transform: translateY(0) scale(0.5);
+    transform: translateY(0) scale(0.6);
   }
   15% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(-150px) scale(1.15);
-  }
-}
-@keyframes dsh-vpet-pop-x {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(8px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-@keyframes dsh-vpet-chat-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes dsh-vpet-settings-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes dsh-vpet-msg-in {
-  from {
-    opacity: 0;
-    transform: translateY(5px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes dsh-vpet-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-150px) scale(1.1);
   }
 }
 @keyframes dsh-vpet-blink {
@@ -1370,49 +1963,58 @@ body::-webkit-scrollbar,
   }
 }
 @keyframes dsh-vpet-mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(229, 72, 77, 0.12); }
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(197, 61, 69, 0.34);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(197, 61, 69, 0.10);
+  }
 }
 @keyframes dsh-vpet-accessory-float {
-  0%, 100% { transform: translateY(0) rotate(-4deg); }
-  50% { transform: translateY(-4px) rotate(4deg); }
-}
-
-/* ---------------------------------------------------------------------------
- * 无障碍：键盘焦点可见 + 减少动效
- * ------------------------------------------------------------------------- */
-.dsh-vpet-menu-item:focus-visible,
-.dsh-vpet-chat-close:focus-visible,
-.dsh-vpet-settings-close:focus-visible,
-.dsh-vpet-chat-btn:focus-visible,
-.dsh-vpet-settings-btn:focus-visible,
-.dsh-vpet-mem-del:focus-visible,
-.dsh-vpet-restore:focus-visible {
-  outline: 2px solid var(--pink);
-  outline-offset: 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dsh-vpet-bubble,
-  .dsh-vpet-focusbadge,
-  .dsh-vpet-menu,
-  .dsh-vpet-chat,
-  .dsh-vpet-settings,
-  .dsh-vpet-status,
-  .dsh-vpet-diarypanel,
-  .dsh-vpet-mempanel,
-  .dsh-vpet-reportpanel,
-  .dsh-vpet-chat-msg,
-  .dsh-vpet-achtoast,
-  .dsh-vpet-particle,
-  .dsh-vpet-chat-cursor {
-    animation: none !important;
+  0%, 100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(4deg);
   }
 }
 
-/* 输入类元素恢复文本选中，便于选中/复制（全局 user-select:none 会继承覆盖）。 */
+/* ---------------------------------------------------------------------------
+ * 无障碍与输入
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-menu-item:focus-visible,
+.dsh-vpet-panel-close:focus-visible,
+.dsh-vpet-chat-btn:focus-visible,
+.dsh-vpet-settings-btn:focus-visible,
+.dsh-vpet-switch:focus-visible,
+.dsh-vpet-theme-card:focus-visible,
+.dsh-vpet-mem-del:focus-visible,
+.dsh-vpet-restore:focus-visible,
+.dsh-vpet-chat-mic:focus-visible,
+.dsh-vpet-sec-head:focus-visible,
+.dsh-vpet-agent-link:focus-visible,
+.dsh-vpet-agentbubble-actions button:focus-visible,
+.dsh-vpet-name-input:focus-visible,
+.dsh-vpet-chat-input:focus-visible,
+.dsh-vpet-mem-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 input,
-textarea {
+textarea,
+select {
   -webkit-user-select: text;
   user-select: text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-vpet-root *,
+  .dsh-vpet-root *::before,
+  .dsh-vpet-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -55,7 +55,10 @@ import { loadJson, saveJson } from "./lib/storage";
 import { clamp } from "./lib/utils";
 import { primeVoices, speak, stopSpeaking } from "./lib/voice";
 import { applyMood, fallbackLineFor, normalizeMood, resolveMood, type MoodId } from "./lib/mood";
+import { agentDetail, agentFocusQuery, agentHeadline, agentIsFailure, agentProviderLabel } from "./lib/agent";
 import type {
+  AgentEvent,
+  AgentHubInfo,
   ChatTurn,
   DailyReport,
   DayStats,
@@ -69,6 +72,7 @@ import type {
   TrashItem,
 } from "./lib/types";
 import { ChatPanel } from "./components/ChatPanel";
+import { AgentPanel } from "./components/AgentPanel";
 import { DailyReportPanel } from "./components/DailyReportPanel";
 import { DiaryPanel } from "./components/DiaryPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
@@ -255,6 +259,11 @@ export function PetApp() {
   const [trashItems, setTrashItems] = useState<TrashItem[]>([]);
   const [dsHealth, setDsHealth] = useState<DshCheck | null>(null);
   const [system, setSystem] = useState<SystemSnapshot | null>(null);
+  const [agentHub, setAgentHub] = useState<AgentHubInfo | null>(null);
+  const [agentEvent, setAgentEvent] = useState<AgentEvent | null>(null);
+  const [agentHistory, setAgentHistory] = useState<AgentEvent[]>([]);
+  const [agentNotice, setAgentNotice] = useState<AgentEvent | null>(null);
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false);
   const [waterOn, setWaterOn] = useState(true);
   const [soundOn, setSoundOn] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
@@ -426,6 +435,9 @@ export function PetApp() {
       { sel: ".dsh-vpet-mempanel", kind: "rect" },
       { sel: ".dsh-vpet-reportpanel", kind: "rect" },
       { sel: ".dsh-vpet-bubble", kind: "rect" },
+      { sel: ".dsh-vpet-agentbubble", kind: "rect" },
+      { sel: ".dsh-vpet-agentchip", kind: "rect" },
+      { sel: ".dsh-vpet-agentpanel", kind: "rect" },
       { sel: ".dsh-vpet-restore", kind: "rect" },
     ];
     const regions: HitRegion[] = [];
@@ -677,6 +689,103 @@ export function PetApp() {
 
   /** 从当前动画池按权重抽一个槽位动作；平台新增同类素材会自动参与轮换。 */
   const pickSlot = useCallback((slot: AnimSlot) => pickWeighted(catRef.current, slot), []);
+
+  // -------------------------------------------------------------------------
+  // 工作搭子：统一事件 → 动画 / 气泡 / 审批雷达
+  // -------------------------------------------------------------------------
+  const focusAgentWindow = useCallback(async (ev: AgentEvent) => {
+    try {
+      const title = await bridge.focusAgentWindow(agentFocusQuery(ev));
+      setBubble({ text: `已切换到：${title}`, ts: Date.now() });
+      setAgentNotice(null);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setBubble({ text: `没找到目标窗口：${msg}`, ts: Date.now() });
+    }
+  }, []);
+
+  const handleAgentEvent = useCallback(
+    (ev: AgentEvent) => {
+      setAgentEvent(ev);
+      setAgentHistory((prev) => [ev, ...prev].slice(0, 50));
+      const provider = agentProviderLabel(ev.provider);
+      const canSound = M.soundOn && !M.muted && !proactiveSpeechBlocked();
+
+      switch (ev.kind) {
+        case "session.start":
+          changeMood("curious", 45_000);
+          setBubble({ text: `${provider} 开始工作了，我盯着呢。`, ts: Date.now() });
+          return;
+        case "session.end":
+          setAgentNotice((prev) => (prev?.kind === "approval.requested" ? null : prev));
+          setBubble({ text: `${provider} 结束了这次工作。`, ts: Date.now() });
+          return;
+        case "prompt.submitted":
+          changeMood("curious", 45_000);
+          return;
+        case "assistant.thinking":
+        case "tool.start":
+        case "tool.end":
+          return;
+        case "approval.requested": {
+          changeMood("curious", 90_000);
+          setAgentNotice(ev);
+          playAnim("原地敲击桌面互动", 7000);
+          if (canSound) beep("click", { soundOn: M.soundOn, muted: M.muted });
+          if (M.voiceOn && !M.muted && !proactiveSpeechBlocked()) {
+            speak(`${provider} 在等你确认。`, { rate: M.voiceRate, voiceName: M.voiceName });
+          }
+          return;
+        }
+        case "approval.resolved":
+          setAgentNotice((prev) => (prev?.kind === "approval.requested" ? null : prev));
+          setBubble({ text: "确认好了，继续干活。", ts: Date.now() });
+          return;
+        case "test.result":
+        case "build.result": {
+          const label = ev.kind === "test.result" ? "测试" : "构建";
+          if (agentIsFailure(ev)) {
+            changeMood("sad", 3 * 60_000);
+            playAnim("任务失败", 7000);
+            setAgentNotice(ev);
+            if (canSound) beep("click", { soundOn: M.soundOn, muted: M.muted });
+          } else {
+            changeMood("happy", 3 * 60_000, true);
+            playAnim("可爱宅舞", 6000);
+            spawnParticles(["✨", "🎉", "💖", "⭐"], 14, ["#ffd166", "#ff8fab", "#8ce3c3", "#b8a1ff"]);
+            setAgentNotice(ev);
+            if (canSound) beep("celebrate", { soundOn: M.soundOn, muted: M.muted });
+          }
+          setBubble({ text: `${label}${agentIsFailure(ev) ? "没过" : "过了"}。`, ts: Date.now() });
+          return;
+        }
+        case "task.done":
+          changeMood("happy", 3 * 60_000, true);
+          playAnim("可爱宅舞", 6000);
+          spawnParticles(["✨", "🎉", "💖"], 12, ["#ffd166", "#ff8fab", "#8ce3c3"]);
+          setAgentNotice(ev);
+          if (canSound) beep("celebrate", { soundOn: M.soundOn, muted: M.muted });
+          return;
+        case "turn.completed":
+          changeMood("happy", 60_000);
+          return;
+        case "task.failed":
+        case "error":
+          changeMood("sad", 3 * 60_000);
+          playAnim("任务失败", 7000);
+          setAgentNotice(ev);
+          if (canSound) beep("click", { soundOn: M.soundOn, muted: M.muted });
+          return;
+        case "notification":
+          setAgentNotice(ev);
+          return;
+        default:
+          if (ev.attention !== "silent") setAgentNotice(ev);
+          return;
+      }
+    },
+    [changeMood, playAnim, spawnParticles],
+  );
 
   const handleVideoFailure = useCallback(
     (src: string) => {
@@ -996,7 +1105,7 @@ export function PetApp() {
   // 菜单 / 投喂 / 专注
   // -------------------------------------------------------------------------
   // 打开某面板时关闭其余面板（避免右上角重叠）
-  const openPanel = useCallback((key: "settings" | "status" | "chat" | "diary" | "mem" | "report") => {
+  const openPanel = useCallback((key: "settings" | "status" | "chat" | "diary" | "mem" | "report" | "agent") => {
     setMenuOpen(false);
     setSettingsOpen(key === "settings");
     setStatusOpen(key === "status");
@@ -1004,6 +1113,7 @@ export function PetApp() {
     setDiaryOpen(key === "diary");
     setMemOpen(key === "mem");
     setReportOpen(key === "report");
+    setAgentPanelOpen(key === "agent");
   }, []);
 
   // 桌面宠物同一时间只保留一个浮层：菜单与面板互斥，避免两个滚动条叠在一起。
@@ -1014,6 +1124,7 @@ export function PetApp() {
     setDiaryOpen(false);
     setMemOpen(false);
     setReportOpen(false);
+    setAgentPanelOpen(false);
   }, []);
 
   const doFeed = useCallback(() => {
@@ -1627,6 +1738,51 @@ export function PetApp() {
     return () => clearInterval(t);
   }, [refreshState]);
 
+  // 工作搭子：本机事件总线（Claude Code / Codex / 通用脚本 → 桌宠）。
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    void listen<AgentEvent>("agent-event", (event) => handleAgentEvent(event.payload))
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      })
+      .catch((error) => {
+        void bridge.diagLog(`agent listen failed: ${String(error)}`).catch(() => {});
+      });
+    void bridge
+      .agentHubInfo()
+      .then(setAgentHub)
+      .catch(() => {});
+    void bridge
+      .agentRecent(30)
+      .then((events) => {
+        if (events.length) {
+          setAgentHistory(events);
+          setAgentEvent(events[0]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [handleAgentEvent]);
+
+  // 普通结果提示 8 秒自动收起；审批请求保持到确认或用户点「稍后」。
+  useEffect(() => {
+    if (!agentNotice || agentNotice.kind === "approval.requested") return;
+    const ms = agentIsFailure(agentNotice) ? 10_000 : 7_000;
+    const t = setTimeout(() => setAgentNotice(null), ms);
+    return () => clearTimeout(t);
+  }, [agentNotice]);
+
+  useEffect(() => {
+    if (!agentPanelOpen) return;
+    void bridge.agentHubInfo().then(setAgentHub).catch(() => {});
+    void bridge.agentRecent(30).then(setAgentHistory).catch(() => {});
+  }, [agentPanelOpen]);
+
   // DSH 检测（15s）
   useEffect(() => {
     let baseline = 0;
@@ -2205,6 +2361,10 @@ export function PetApp() {
 
   // 桌宠贴近屏幕上沿时，气泡改到身体下方弹出，避免顶出窗口导致「对话框不显示」。
   const bubbleFlipDown = bubble !== null && petPos.y < 200;
+  const agentChip = agentEvent && agentEvent.kind !== "session.end" ? agentEvent : null;
+  const agentChipUrgent = agentNotice?.kind === "approval.requested" || agentChip?.kind === "approval.requested";
+  const agentNoticeIcon =
+    agentNotice?.kind === "approval.requested" ? "🙋" : agentNotice && agentIsFailure(agentNotice) ? "⚠️" : "✨";
   // 菜单同理：上方空间不足时向下展开，右侧空间不足时改为右对齐。
   const menuFlipDown = petPos.y < 320;
   const menuFlipLeft = petPos.x + 330 > window.innerWidth - 8;
@@ -2274,15 +2434,17 @@ export function PetApp() {
               onPointerMove={(e) => e.stopPropagation()}
               onPointerUp={(e) => e.stopPropagation()}
             >
-              <div className="dsh-vpet-menu-item" onClick={doFeed}>🍩 投喂</div>
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("chat")}>💬 聊天</div>
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("status")}>📊 状态</div>
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("diary")}>📔 日记</div>
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("report")}>📊 报告</div>
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("mem")}>🧠 记忆</div>
+              <button type="button" className="dsh-vpet-menu-item" onClick={doFeed}>🍩 投喂</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("chat")}>💬 聊天</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("status")}>📊 状态</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("agent")}>🤝 工作搭子</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("diary")}>📔 日记</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("report")}>📊 报告</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("mem")}>🧠 记忆</button>
               <div className="dsh-vpet-menu-sep" />
-              <div className="dsh-vpet-menu-item" onClick={startFocus}>🍅 专注 25min</div>
-              <div
+              <button type="button" className="dsh-vpet-menu-item" onClick={startFocus}>🍅 专注 25min</button>
+              <button
+                type="button"
                 className="dsh-vpet-menu-item"
                 onClick={() => {
                   const index = SCENE_MODES.indexOf(M.sceneMode);
@@ -2291,8 +2453,9 @@ export function PetApp() {
                 }}
               >
                 🎬 场景：{sceneLabel(M.sceneMode)}
-              </div>
-              <div
+              </button>
+              <button
+                type="button"
                 className="dsh-vpet-menu-item"
                 onClick={() => {
                   const index = THEMES.findIndex((t) => t.id === M.theme);
@@ -2303,19 +2466,58 @@ export function PetApp() {
                 }}
               >
                 🎨 换主题
-              </div>
-              <div className="dsh-vpet-menu-item" onClick={resetPosition}>🧭 回到右下角</div>
-              <div className="dsh-vpet-menu-item" onClick={() => setMutedSafe(!M.muted)}>
+              </button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={resetPosition}>🧭 回到右下角</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => setMutedSafe(!M.muted)}>
                 {M.muted ? "🔇 安静模式开" : "🔔 安静模式"}
-              </div>
+              </button>
               <div className="dsh-vpet-menu-sep" />
-              <div className="dsh-vpet-menu-item" onClick={() => openPanel("settings")}>⚙️ 设置</div>
-              <div className="dsh-vpet-menu-item" onClick={() => setHiddenSafe(true)}>🙈 隐藏</div>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => openPanel("settings")}>⚙️ 设置</button>
+              <button type="button" className="dsh-vpet-menu-item" onClick={() => setHiddenSafe(true)}>🙈 隐藏</button>
             </div>
           )}
-          {bubble && bubbleDisp && (
-            <div className={"dsh-vpet-bubble" + (bubbleFlipDown ? " dsh-vpet-bubble-down" : "")}>{bubbleDisp}</div>
+          {agentChip && !agentNotice && (
+            <button
+              type="button"
+              className={"dsh-vpet-agentchip" + (agentChipUrgent ? " is-approval" : "")}
+              title={agentDetail(agentChip)}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onClick={() => setAgentPanelOpen(true)}
+            >
+              <span className="dsh-vpet-agentchip-dot" />
+              <span>{agentHeadline(agentChip)}</span>
+            </button>
           )}
+          {agentNotice ? (
+            <div
+              className={
+                "dsh-vpet-agentbubble" +
+                (agentNotice.kind === "approval.requested" ? " is-approval" : "") +
+                (agentIsFailure(agentNotice) ? " is-failure" : "") +
+                (!agentIsFailure(agentNotice) && agentNotice.kind !== "approval.requested" ? " is-success" : "") +
+                (bubbleFlipDown ? " dsh-vpet-agentbubble-down" : "")
+              }
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+            >
+              <div className="dsh-vpet-agentbubble-head">
+                <span>{agentNoticeIcon}</span>
+                <span>{agentHeadline(agentNotice)}</span>
+              </div>
+              <div className="dsh-vpet-agentbubble-text">{agentDetail(agentNotice)}</div>
+              <div className="dsh-vpet-agentbubble-actions">
+                <button type="button" onClick={() => void focusAgentWindow(agentNotice)}>
+                  {agentNotice.kind === "approval.requested" ? "去看看" : "定位窗口"}
+                </button>
+                <button type="button" onClick={() => setAgentNotice(null)}>
+                  {agentNotice.kind === "approval.requested" ? "稍后" : "知道了"}
+                </button>
+              </div>
+            </div>
+          ) : bubble && bubbleDisp ? (
+            <div className={"dsh-vpet-bubble" + (bubbleFlipDown ? " dsh-vpet-bubble-down" : "")}>{bubbleDisp}</div>
+          ) : null}
           {M.focusFlag && (
             <div className="dsh-vpet-focusbadge">🍅 {fmtClock(focusSecs)}</div>
           )}
@@ -2573,6 +2775,20 @@ export function PetApp() {
           dsHealth={dsHealth}
           system={system}
           onClose={() => setStatusOpen(false)}
+          anchor={panelAnchor}
+        />
+      )}
+
+      {/* 工作搭子面板 */}
+      {agentPanelOpen && (
+        <AgentPanel
+          events={agentHistory}
+          hub={agentHub}
+          onEmit={async (event) => {
+            await bridge.agentEmit(event);
+          }}
+          onFocus={(query) => bridge.focusAgentWindow(query)}
+          onClose={() => setAgentPanelOpen(false)}
           anchor={panelAnchor}
         />
       )}

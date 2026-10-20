@@ -1,6 +1,6 @@
 // 记忆面板：手动添加 + 分类 + 列表删除。
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
 import { MEM_CATS, todayStr } from "../lib/constants";
 import type { Memory } from "../lib/types";
@@ -18,10 +18,13 @@ export function MemoryPanel(props: MemoryPanelProps) {
   const drag = usePanelDrag(props.anchor);
   const [content, setContent] = useState("");
   const [cat, setCat] = useState("goal");
+  const inputRef = useRef<HTMLInputElement | null>(null);
   return (
     <div ref={drag.ref} className="dsh-vpet-mempanel">
       <PanelHead
-        title="🧠 记忆本"
+        icon="🧠"
+        title="记忆本"
+        subtitle="她会记住你说过的事"
         onClose={props.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
@@ -30,6 +33,7 @@ export function MemoryPanel(props: MemoryPanelProps) {
       />
       <div className="dsh-vpet-mem-add">
         <input
+          ref={inputRef}
           className="dsh-vpet-name-input"
           style={{ flex: 1 }}
           value={content}
@@ -57,9 +61,12 @@ export function MemoryPanel(props: MemoryPanelProps) {
       <div className="dsh-vpet-mem-list">
         {props.list.length === 0 && (
           <div className="dsh-vpet-mem-empty">
-            <div>还没有记忆</div>
-            <div>聊几句天我会自动记住你的事</div>
-            <div>也可以手动加一条</div>
+            <span className="dsh-vpet-empty-icon" aria-hidden="true">🧠</span>
+            <div className="dsh-vpet-empty-title">还没有记忆</div>
+            <div className="dsh-vpet-empty-desc">聊几句天她会自动记住你的事，也可以手动加一条。</div>
+            <button className="dsh-vpet-settings-btn" type="button" onClick={() => inputRef.current?.focus()}>
+              添加第一条
+            </button>
           </div>
         )}
         {props.list.map((m) => (

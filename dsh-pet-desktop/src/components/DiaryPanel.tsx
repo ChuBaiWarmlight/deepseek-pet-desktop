@@ -1,6 +1,6 @@
 // 日记面板：手动写 + 历史列表。
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePanelDrag, type PanelAnchor } from "../hooks/usePanelDrag";
 import type { DiaryEntry } from "../lib/types";
 import { PanelHead } from "./PanelHead";
@@ -16,6 +16,7 @@ export function DiaryPanel(props: DiaryPanelProps) {
   const drag = usePanelDrag(props.anchor);
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
+  const textRef = useRef<HTMLTextAreaElement | null>(null);
   const submit = async () => {
     const value = text.trim();
     if (!value || saving) return;
@@ -30,7 +31,9 @@ export function DiaryPanel(props: DiaryPanelProps) {
   return (
     <div ref={drag.ref} className="dsh-vpet-diarypanel">
       <PanelHead
-        title="📔 心情日记"
+        icon="📔"
+        title="心情日记"
+        subtitle="记录今天，也记录她"
         onClose={props.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
@@ -43,6 +46,7 @@ export function DiaryPanel(props: DiaryPanelProps) {
       </div>
       <div className="dsh-vpet-diarypanel-toolbar">
         <textarea
+          ref={textRef}
           className="dsh-vpet-name-input"
           style={{ flex: 1, minHeight: 84 }}
           value={text}
@@ -67,9 +71,12 @@ export function DiaryPanel(props: DiaryPanelProps) {
       <div className="dsh-vpet-diarypanel-list">
         {props.list.length === 0 && (
           <div className="dsh-vpet-diarypanel-empty">
-            <div>还没有日记</div>
-            <div>聊几句天我会自动写一篇</div>
-            <div>也可以手动写一条</div>
+            <span className="dsh-vpet-empty-icon" aria-hidden="true">📝</span>
+            <div className="dsh-vpet-empty-title">今天还没有记录</div>
+            <div className="dsh-vpet-empty-desc">聊几句天她会自动写一篇，也可以现在写一条。</div>
+            <button className="dsh-vpet-settings-btn" type="button" onClick={() => textRef.current?.focus()}>
+              写第一条
+            </button>
           </div>
         )}
         {props.list.map((d) => (

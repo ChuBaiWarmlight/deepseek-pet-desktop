@@ -29,7 +29,9 @@ export function StatusPanel(props: StatusPanelProps) {
   return (
     <div ref={drag.ref} className="dsh-vpet-status">
       <PanelHead
-        title="📊 状态"
+        icon="📊"
+        title="状态"
+        subtitle="关系、习惯与今天"
         onClose={props.onClose}
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
@@ -80,7 +82,7 @@ export function StatusPanel(props: StatusPanelProps) {
             }}
           />
         </span>
-        <span className="dsh-vpet-status-v">{props.relationNext ? `${props.relationNext.min}/${props.affinity}` : "MAX"}</span>
+        <span className="dsh-vpet-status-v">{props.relationNext ? `${props.affinity}/${props.relationNext.min}` : "MAX"}</span>
       </div>
       <div className="dsh-vpet-relation-hint">
         {props.relationNext

@@ -162,6 +162,37 @@ export interface PetCommand {
   payload: Record<string, unknown>;
 }
 
+export type AgentAttention = "silent" | "glance" | "interrupt";
+
+/** 统一 AI 工作事件（Rust agent_hub 归一化后推送给前端）。 */
+export interface AgentEvent {
+  id: string;
+  ts: number;
+  provider: string;
+  kind: string;
+  sessionId: string;
+  project: string;
+  cwd: string;
+  title: string;
+  status: string;
+  summary: string;
+  severity: string;
+  attention: AgentAttention;
+  windowTitle: string;
+  data?: Record<string, unknown> | null;
+}
+
+export type AgentEventInput = Partial<AgentEvent> & { kind: string };
+
+export interface AgentHubInfo {
+  running: boolean;
+  host: string;
+  port: number;
+  token: string;
+  endpoint: string;
+  recentCount: number;
+}
+
 export interface PetHeartbeat {
   name: string;
   affinity: number;
