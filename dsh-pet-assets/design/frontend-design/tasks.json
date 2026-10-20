@@ -1,0 +1,9 @@
+[
+  {
+    "name": "fe-dev-dsh-pet-assets",
+    "type": "fe-dev",
+    "gitUrl": "",
+    "gitBranch": "feature/pet-assets-admin-refactor",
+    "description": "dsh-pet-assets 管理平台前端路由化改造：将 v-if 视图切换重构为 vue-router 路由（/login + 布局 + /dashboard /library /console /trash /audit /health /settings 子路由 + 鉴权守卫）；拆分 AdminLayout + 7 个视图组件；编辑动作保持 el-dialog 弹窗；新增 composable 单例 store（assets.js/auth.js）共享状态与 401 统一处理；侧栏改 el-menu、统一页面头/加载/空态，整体 UI 优化。"
+  }
+]

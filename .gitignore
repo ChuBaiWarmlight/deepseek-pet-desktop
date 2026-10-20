@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+target/
+*.exe
+*.msi
+*.pdb
+
+# Test / probe artifacts
+_chrome_probe_profile/
+artifacts/
+/*.png
+/app-probe-dom.txt
+*.log
+.tmp-*
+
+# Local runtime data
+*.db
+*.db-wal
+*.db-shm
+config.json
+
+# Large video backup (full set lives on the assets platform)
+_external-videos/
+
+# OS files
+.DS_Store
+Thumbs.db

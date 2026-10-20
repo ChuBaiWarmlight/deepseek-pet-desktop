@@ -1,0 +1,1395 @@
+/* dsh-pet-desktop 样式
+   设计方向：糖果贴纸 · 明亮软糖风
+   主题：每个面板都是一枚"模切贴纸"——奶油底 + 白描边 + 顶部糖霜高光 + 大圆角，
+   糖果色（草莓粉 / 薄荷 / 葡萄）点缀，像贴在桌面上的软糖小卡片。 */
+
+/* ---------------------------------------------------------------------------
+ * 令牌（token）
+ * ------------------------------------------------------------------------- */
+:root {
+  /* 糖果底色 */
+  --cream: #fff6ef;          /* 香草奶油底 */
+  --cream-2: #ffefe4;        /* 稍深的奶油（凹陷底 / 轨道） */
+  --white: #ffffff;
+
+  /* 草莓（主强调） */
+  --pink: #ff5d8f;
+  --pink-deep: #ec3d78;
+  --pink-soft: rgba(255, 93, 143, 0.15);
+
+  /* 薄荷（次级） */
+  --mint: #1fc4a4;
+  --mint-soft: rgba(31, 196, 164, 0.16);
+
+  /* 葡萄（点缀） */
+  --grape: #9a7bf5;
+  --grape-soft: rgba(154, 123, 245, 0.15);
+
+  /* 奶油黄（极少量点缀） */
+  --butter: #ffc94d;
+
+  /* 墨色（深莓，非纯黑） */
+  --ink: #4a2b3a;
+  --ink-2: #9a7f8c;
+  --ink-3: #c6b0bb;
+
+  /* 描边 */
+  --line: #f5e0ea;
+  --line-strong: #ebc9d9;
+
+  /* 危险 */
+  --danger: #e5484d;
+  --danger-soft: rgba(229, 72, 77, 0.14);
+
+  /* 字体 */
+  --font-sans: "Segoe UI", "Microsoft YaHei", "PingFang SC", -apple-system, system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", "SF Mono", "Segoe UI Mono", monospace;
+
+  /* 糖果贴纸投影：硬偏移 + 柔和弥散 */
+  --shadow-sticker: 0 4px 0 rgba(255, 93, 143, 0.10), 0 16px 36px rgba(120, 50, 80, 0.22);
+  --shadow-tight: 0 2px 0 rgba(255, 93, 143, 0.08), 0 5px 14px rgba(120, 50, 80, 0.16);
+}
+
+/* 换肤：只替换令牌，所有面板/菜单/气泡同步变色。 */
+.dsh-vpet-root[data-theme="mint"] {
+  --cream: #f0fbf7;
+  --cream-2: #e2f7f0;
+  --pink: #15b79e;
+  --pink-deep: #0d8f7c;
+  --pink-soft: rgba(21, 183, 158, 0.15);
+  --mint: #ff9f5a;
+  --mint-soft: rgba(255, 159, 90, 0.18);
+  --grape: #5b8def;
+  --grape-soft: rgba(91, 141, 239, 0.14);
+  --butter: #ffd166;
+  --ink: #24443f;
+  --ink-2: #698c85;
+  --ink-3: #a5c4bd;
+  --line: #ddf4ed;
+  --line-strong: #bfe8dd;
+  --shadow-sticker: 0 4px 0 rgba(21, 183, 158, 0.10), 0 16px 36px rgba(25, 82, 71, 0.20);
+  --shadow-tight: 0 2px 0 rgba(21, 183, 158, 0.08), 0 5px 14px rgba(25, 82, 71, 0.14);
+}
+
+.dsh-vpet-root[data-theme="ocean"] {
+  --cream: #f1f8ff;
+  --cream-2: #e4f1ff;
+  --pink: #3b82f6;
+  --pink-deep: #2563eb;
+  --pink-soft: rgba(59, 130, 246, 0.15);
+  --mint: #14b8a6;
+  --mint-soft: rgba(20, 184, 166, 0.16);
+  --grape: #8b5cf6;
+  --grape-soft: rgba(139, 92, 246, 0.14);
+  --butter: #fbbf24;
+  --ink: #233a5c;
+  --ink-2: #6d86a7;
+  --ink-3: #a9bdd6;
+  --line: #deecfb;
+  --line-strong: #c2dbf6;
+  --shadow-sticker: 0 4px 0 rgba(59, 130, 246, 0.10), 0 16px 36px rgba(30, 64, 120, 0.20);
+  --shadow-tight: 0 2px 0 rgba(59, 130, 246, 0.08), 0 5px 14px rgba(30, 64, 120, 0.14);
+}
+
+.dsh-vpet-root[data-theme="lavender"] {
+  --cream: #faf4ff;
+  --cream-2: #f2e8ff;
+  --pink: #a855f7;
+  --pink-deep: #8338d8;
+  --pink-soft: rgba(168, 85, 247, 0.15);
+  --mint: #ec4899;
+  --mint-soft: rgba(236, 72, 153, 0.15);
+  --grape: #6366f1;
+  --grape-soft: rgba(99, 102, 241, 0.14);
+  --butter: #f9c74f;
+  --ink: #3e2f55;
+  --ink-2: #87759e;
+  --ink-3: #bfb0cf;
+  --line: #f0e4fb;
+  --line-strong: #e2d0f3;
+  --shadow-sticker: 0 4px 0 rgba(168, 85, 247, 0.10), 0 16px 36px rgba(76, 40, 110, 0.22);
+  --shadow-tight: 0 2px 0 rgba(168, 85, 247, 0.08), 0 5px 14px rgba(76, 40, 110, 0.16);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: clip !important;
+  background: transparent;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: var(--font-sans);
+}
+
+body {
+  position: fixed;
+  inset: 0;
+}
+
+#root {
+  position: fixed;
+  inset: 0;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* 窗口根节点：绝不参与滚动，宠物/面板拖到任何位置都不会产生第二条滚动条。 */
+.dsh-vpet-root {
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+  overscroll-behavior: none;
+  contain: layout paint;
+}
+
+/* ---------------------------------------------------------------------------
+ * 宠物本体
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-anchor {
+  position: absolute;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  line-height: 0;
+}
+.dsh-vpet-anchor.dsh-vpet-dragging {
+  cursor: grabbing;
+}
+.dsh-vpet-stage {
+  position: relative;
+  line-height: 0;
+  overflow: hidden;
+}
+.dsh-vpet-video {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  background: transparent;
+  outline: none;
+  object-fit: contain;
+  transform-origin: center center;
+}
+.dsh-vpet-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: opacity 0.15s linear;
+}
+.dsh-vpet-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  pointer-events: none;
+  user-select: none;
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ * 浮层：糖果贴纸（统一基底）
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-menu,
+.dsh-vpet-chat,
+.dsh-vpet-settings,
+.dsh-vpet-status,
+.dsh-vpet-diarypanel,
+.dsh-vpet-mempanel,
+.dsh-vpet-reportpanel {
+  position: absolute;
+  /* 顶部糖霜高光（背景不随内容滚动）+ 奶油底 */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 46%),
+    var(--cream);
+  color: var(--ink);
+  border: 2px solid var(--white);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sticker);
+  pointer-events: auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 标题下的"糖果条纹"下划线——签名元素 */
+.dsh-vpet-settings-title,
+.dsh-vpet-chat-head > span:first-child {
+  position: relative;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+}
+.dsh-vpet-settings-title::after,
+.dsh-vpet-chat-head > span:first-child::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  bottom: -5px;
+  width: 58%;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--pink), var(--mint));
+}
+
+/* ---------------------------------------------------------------------------
+ * 气泡 / 专注徽标
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  max-width: 340px;
+  min-width: 36px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--white);
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: var(--shadow-tight);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  pointer-events: none;
+  animation: dsh-vpet-pop-x 0.16s ease-out;
+}
+.dsh-vpet-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--white);
+}
+.dsh-vpet-bubble-down {
+  bottom: auto;
+  top: 100%;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+.dsh-vpet-bubble-down::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--white);
+}
+.dsh-vpet-focusbadge {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--white);
+  border-radius: 14px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+  box-shadow: var(--shadow-tight);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: dsh-vpet-pop-x 0.16s ease-out;
+}
+
+/* ---------------------------------------------------------------------------
+ * 右键菜单
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-menu {
+  top: auto;
+  left: 0;
+  right: auto;
+  bottom: 100%;
+  transform: none;
+  margin-bottom: 10px;
+  width: 320px;
+  max-height: none;
+  /* 菜单不再是滚动容器：紧凑双列布局，彻底消除宠物旁边“第二条滚动条”。 */
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 8px;
+  z-index: 20;
+  animation: dsh-vpet-settings-in 0.15s ease-out;
+  scrollbar-width: none;
+}
+/* 靠近屏幕上沿时向下展开，避免菜单被裁切后看起来像一条多余滚动区域。 */
+.dsh-vpet-menu.dsh-vpet-menu-down {
+  top: 100%;
+  bottom: auto;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+/* 靠近屏幕右沿时改为右对齐，菜单始终完整可见。 */
+.dsh-vpet-menu.dsh-vpet-menu-left {
+  left: auto;
+  right: 0;
+}
+.dsh-vpet-menu-item {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.dsh-vpet-menu-item:hover {
+  background: var(--pink-soft);
+  border-color: var(--pink);
+  color: var(--pink-deep);
+}
+.dsh-vpet-menu-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--line);
+}
+
+/* ---------------------------------------------------------------------------
+ * 聊天面板
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-chat {
+  width: 380px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow: hidden;
+  padding: 14px;
+  animation: dsh-vpet-chat-in 0.18s ease-out;
+}
+.dsh-vpet-chat-head,
+.dsh-vpet-settings-head,
+.dsh-vpet-diarypanel-head,
+.dsh-vpet-mempanel-head,
+.dsh-vpet-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.dsh-vpet-chat-head:active,
+.dsh-vpet-settings-head:active,
+.dsh-vpet-diarypanel-head:active,
+.dsh-vpet-mempanel-head:active,
+.dsh-vpet-status-head:active {
+  cursor: grabbing;
+}
+.dsh-vpet-chat-close,
+.dsh-vpet-settings-close {
+  appearance: none;
+  border: 0;
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  font-size: 14px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.dsh-vpet-chat-close:hover,
+.dsh-vpet-settings-close:hover {
+  background: var(--pink);
+  color: #fff;
+}
+.dsh-vpet-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 2px 2px 2px 0;
+  scroll-behavior: smooth;
+}
+.dsh-vpet-chat-log::-webkit-scrollbar {
+  width: 6px;
+}
+.dsh-vpet-chat-log::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+.dsh-vpet-chat-msg {
+  padding: 8px 13px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 85%;
+  animation: dsh-vpet-msg-in 0.18s ease-out;
+}
+.dsh-vpet-chat-u {
+  align-self: flex-end;
+  background: var(--pink);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+.dsh-vpet-chat-a {
+  align-self: flex-start;
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-bottom-left-radius: 6px;
+}
+.dsh-vpet-chat-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  color: var(--pink);
+  animation: dsh-vpet-blink 0.8s steps(2, start) infinite;
+}
+.dsh-vpet-chat-thinking {
+  color: var(--ink-3);
+  font-style: normal;
+}
+.dsh-vpet-chat-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dsh-vpet-chat-mic {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+}
+.dsh-vpet-chat-mic:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: var(--pink-soft);
+}
+.dsh-vpet-chat-mic.is-recording {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+  animation: dsh-vpet-mic-pulse 1s ease-in-out infinite;
+}
+.dsh-vpet-chat-mic:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.dsh-vpet-chat-voicehint {
+  font-size: 11px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  margin-top: -2px;
+}
+.dsh-vpet-chat-input {
+  flex: 1;
+  border: 2px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  min-width: 0;
+}
+.dsh-vpet-chat-input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--pink-soft);
+}
+.dsh-vpet-chat-btn {
+  border: none;
+  background: var(--pink);
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--pink-deep);
+}
+.dsh-vpet-chat-btn:hover:not(:disabled) {
+  background: var(--pink-deep);
+}
+.dsh-vpet-chat-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------------------------------------------------------------------------
+ * 设置面板
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-settings {
+  width: 400px;
+  max-height: min(600px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+  animation: dsh-vpet-settings-in 0.18s ease-out;
+}
+
+.dsh-vpet-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.dsh-vpet-panel-body::-webkit-scrollbar {
+  width: 8px;
+}
+.dsh-vpet-panel-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dsh-vpet-panel-body::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+.dsh-vpet-panel-body::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
+.dsh-vpet-settings-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dsh-vpet-settings-grip {
+  color: var(--ink-3);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.dsh-vpet-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  margin: 2px 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--cream-2);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dsh-vpet-sec-head:hover {
+  background: var(--pink-soft);
+  border-color: var(--pink);
+  color: var(--pink-deep);
+}
+.dsh-vpet-sec-arrow {
+  width: 12px;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+.dsh-vpet-sec-label {
+  flex: 1;
+}
+.dsh-vpet-sec-body {
+  padding: 2px 4px 6px 10px;
+  border-left: 2px dashed var(--line-strong);
+  margin-left: 5px;
+}
+.dsh-vpet-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+}
+.dsh-vpet-settings-label {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.dsh-vpet-settings-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--pink);
+}
+.dsh-vpet-settings-btn {
+  border: 1px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dsh-vpet-settings-btn:hover:not(:disabled) {
+  background: var(--pink-soft);
+  border-color: var(--pink);
+  color: var(--pink-deep);
+}
+.dsh-vpet-settings-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--cream-2);
+  color: var(--ink-3);
+}
+.dsh-vpet-settings-btn.is-active {
+  border-color: var(--pink);
+  color: var(--pink-deep);
+  background: var(--pink-soft);
+  box-shadow: 0 0 0 2px var(--pink-soft);
+}
+.dsh-vpet-scene-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  flex: 1;
+}
+.dsh-vpet-settings-sep {
+  height: 1px;
+  margin: 10px 0;
+  background: var(--line);
+}
+.dsh-vpet-settings-hint {
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 4px 0;
+}
+.dsh-vpet-theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px 0 6px;
+}
+.dsh-vpet-theme-card {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.dsh-vpet-theme-card:hover {
+  border-color: var(--line-strong);
+  background: var(--cream-2);
+}
+.dsh-vpet-theme-card.is-active {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--pink-soft);
+}
+.dsh-vpet-theme-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dsh-vpet-theme-dots {
+  display: inline-flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.dsh-vpet-theme-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+.dsh-vpet-settings-v {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dsh-vpet-trash {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.dsh-vpet-trash-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+.dsh-vpet-trash-name {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.dsh-vpet-trash-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.dsh-vpet-btn-danger {
+  color: var(--danger);
+  border-color: rgba(229, 72, 77, 0.4);
+}
+.dsh-vpet-btn-danger:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.dsh-vpet-name-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.dsh-vpet-name-input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.dsh-vpet-name-input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--pink-soft);
+}
+.dsh-vpet-name-input[type="date"] {
+  height: 30px;
+  cursor: pointer;
+}
+.dsh-vpet-name-input[type="time"] {
+  flex: 0 1 96px;
+  height: 30px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * 状态面板
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-status {
+  width: 320px;
+  max-height: min(520px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+  animation: dsh-vpet-settings-in 0.18s ease-out;
+}
+.dsh-vpet-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+}
+.dsh-vpet-status-k {
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.dsh-vpet-status-v {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+.dsh-vpet-status-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--cream-2);
+  overflow: hidden;
+  min-width: 40px;
+}
+.dsh-vpet-status-fill {
+  height: 100%;
+  border-radius: 5px;
+}
+.dsh-vpet-status-sep {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--line);
+}
+.dsh-vpet-relation-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 6px;
+}
+.dsh-vpet-relation-emoji {
+  font-size: 24px;
+}
+.dsh-vpet-relation-name {
+  font-size: 16px;
+  font-weight: 800;
+}
+.dsh-vpet-relation-accessory {
+  margin-left: auto;
+  font-size: 20px;
+}
+.dsh-vpet-relation-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.dsh-vpet-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.dsh-vpet-status-grid span {
+  font-size: 12px;
+  padding: 5px 6px;
+  border-radius: 10px;
+  background: var(--cream-2);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * 成就
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-ach-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.dsh-vpet-ach-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.dsh-vpet-ach-on {
+  background: var(--cream-2);
+}
+.dsh-vpet-ach-off {
+  opacity: 0.5;
+}
+.dsh-vpet-ach-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.dsh-vpet-ach-name {
+  font-size: 11px;
+  line-height: 1.2;
+}
+.dsh-vpet-ach-prog {
+  font-size: 10px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * 日记 / 记忆面板
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-diarypanel,
+.dsh-vpet-mempanel,
+.dsh-vpet-reportpanel {
+  width: 400px;
+  max-height: min(600px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+  animation: dsh-vpet-settings-in 0.18s ease-out;
+}
+.dsh-vpet-reportpanel {
+  width: 420px;
+}
+.dsh-vpet-report-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dsh-vpet-report-toolbar select {
+  flex: 1;
+}
+.dsh-vpet-reportcard {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+  padding: 16px;
+}
+.dsh-vpet-reportcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.dsh-vpet-reportcard-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.dsh-vpet-reportcard-date {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+}
+.dsh-vpet-report-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.dsh-vpet-report-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 5px;
+  border-radius: 11px;
+  background: var(--cream-2);
+  text-align: center;
+  font-size: 10px;
+  color: var(--ink-2);
+}
+.dsh-vpet-report-stat strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.dsh-vpet-report-section {
+  padding: 10px 0;
+  border-top: 1px dashed var(--line);
+}
+.dsh-vpet-report-section-title {
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pink-deep);
+}
+.dsh-vpet-report-section-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.dsh-vpet-report-mood {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--pink-soft);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dsh-vpet-diarypanel-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.dsh-vpet-diarypanel-toolbar textarea {
+  resize: vertical;
+  line-height: 1.6;
+  flex: 1;
+  border: 2px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.dsh-vpet-diarypanel-toolbar textarea:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--pink-soft);
+}
+.dsh-vpet-diarypanel-toolbar .dsh-vpet-chat-btn {
+  min-width: 58px;
+}
+.dsh-vpet-diarypanel-intro {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-2);
+  font-size: 12px;
+  margin: 0 0 7px;
+}
+.dsh-vpet-diarypanel-list,
+.dsh-vpet-mem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  flex: 1;
+  min-height: 0;
+}
+.dsh-vpet-diarypanel-list::-webkit-scrollbar,
+.dsh-vpet-mem-list::-webkit-scrollbar {
+  width: 8px;
+}
+.dsh-vpet-diarypanel-list::-webkit-scrollbar-thumb,
+.dsh-vpet-mem-list::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+.dsh-vpet-diarypanel-empty,
+.dsh-vpet-mem-empty {
+  font-size: 13px;
+  color: var(--ink-2);
+  text-align: center;
+  padding: 36px 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.dsh-vpet-diarycard {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--white);
+}
+.dsh-vpet-diarycard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--pink), var(--mint));
+}
+.dsh-vpet-diarycard-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+  font-family: var(--font-mono);
+}
+.dsh-vpet-diarycard-text {
+  font-size: 13px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+}
+.dsh-vpet-mem-add {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.dsh-vpet-mem-select {
+  flex-shrink: 0;
+  border: 2px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 5px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.dsh-vpet-mem-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--white);
+}
+.dsh-vpet-mem-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.dsh-vpet-mem-cat {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.3px;
+}
+.dsh-vpet-mem-del {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.dsh-vpet-mem-del:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.dsh-vpet-mem-content {
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * 成就 toast / 粒子 / 还原按钮
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-achtoast {
+  position: absolute;
+  right: 16px;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--white);
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow-tight);
+  pointer-events: none;
+  animation: dsh-vpet-toast-in 0.3s ease-out;
+}
+.dsh-vpet-achtoast-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.dsh-vpet-particle {
+  position: absolute;
+  bottom: 12%;
+  pointer-events: none;
+  animation: dsh-vpet-rise 1.8s ease-out forwards;
+}
+.dsh-vpet-particle-dot {
+  border-radius: 50%;
+}
+.dsh-vpet-particle-emoji {
+  line-height: 1;
+}
+.dsh-vpet-accessory {
+  position: absolute;
+  right: 5%;
+  top: 1%;
+  z-index: 4;
+  font-size: clamp(16px, 5vw, 30px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(63, 44, 72, 0.24));
+  animation: dsh-vpet-accessory-float 3.4s ease-in-out infinite;
+}
+.dsh-vpet-restore {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 26px;
+  background: var(--pink);
+  color: var(--white);
+  border: 2px solid var(--white);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow-sticker);
+  pointer-events: auto;
+}
+.dsh-vpet-restore-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.dsh-vpet-restore:hover {
+  transform: scale(1.05);
+  background: var(--pink-deep);
+}
+
+/* ---------------------------------------------------------------------------
+ * 动画
+ * ------------------------------------------------------------------------- */
+@keyframes dsh-vpet-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(1.15);
+  }
+}
+@keyframes dsh-vpet-pop-x {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+@keyframes dsh-vpet-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes dsh-vpet-settings-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes dsh-vpet-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes dsh-vpet-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes dsh-vpet-blink {
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes dsh-vpet-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(229, 72, 77, 0.12); }
+}
+@keyframes dsh-vpet-accessory-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-4px) rotate(4deg); }
+}
+
+/* ---------------------------------------------------------------------------
+ * 无障碍：键盘焦点可见 + 减少动效
+ * ------------------------------------------------------------------------- */
+.dsh-vpet-menu-item:focus-visible,
+.dsh-vpet-chat-close:focus-visible,
+.dsh-vpet-settings-close:focus-visible,
+.dsh-vpet-chat-btn:focus-visible,
+.dsh-vpet-settings-btn:focus-visible,
+.dsh-vpet-mem-del:focus-visible,
+.dsh-vpet-restore:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-vpet-bubble,
+  .dsh-vpet-focusbadge,
+  .dsh-vpet-menu,
+  .dsh-vpet-chat,
+  .dsh-vpet-settings,
+  .dsh-vpet-status,
+  .dsh-vpet-diarypanel,
+  .dsh-vpet-mempanel,
+  .dsh-vpet-reportpanel,
+  .dsh-vpet-chat-msg,
+  .dsh-vpet-achtoast,
+  .dsh-vpet-particle,
+  .dsh-vpet-chat-cursor {
+    animation: none !important;
+  }
+}
+
+/* 输入类元素恢复文本选中，便于选中/复制（全局 user-select:none 会继承覆盖）。 */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}

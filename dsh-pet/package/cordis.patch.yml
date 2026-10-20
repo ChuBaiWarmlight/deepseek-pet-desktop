@@ -1,0 +1,7 @@
+# dsh-pet (custom tsundere desktop pet) bundle patch: inserts the dual-face
+# plugin row into the web profile roster. Row id is `dsh-pet-custom` to avoid
+# colliding with the bundled `@linxin666/dsh-pet` (whale-girl pet, id `pet`).
+# Activate with `dsh plugin --profile web add link:E:\deepseek-harness-student\dsh-pet\package`.
+- insert:
+    - id: dsh-pet-custom
+      name: 'dsh-pet'

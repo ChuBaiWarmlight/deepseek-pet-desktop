@@ -1,0 +1,52 @@
+[package]
+name = "dsh-pet-desktop"
+version = "0.1.0"
+description = "dsh-pet 独立桌面宠物（Tauri 2 + React）"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "dsh_pet_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+base64 = "0.22"
+# 网络：LLM 调用 + DSH 桥接；rustls 避免 openssl 依赖
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+# 开机自启（HKCU\...\Run）
+auto-launch = "0.5"
+# 跨平台路径（app_data_dir 等由 tauri 提供，这里用 home 目录）
+dirs = "5"
+# 本地日期（记忆“今天日期靠前”排序、日记/复盘日期）
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# Windows/macOS/Linux 原生文件选择框，用于备份导入导出。
+rfd = "0.15"
+
+# 系统感知：前台应用 / 系统空闲 / 电量（纯 Win32 读取，仅 Windows）。
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+  "sysinfoapi",
+  "winuser",
+  "winbase",
+  "processthreadsapi",
+  "handleapi",
+  "winnt",
+  "minwindef",
+  "windef",
+  "ntdef",
+  "wincred",
+] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

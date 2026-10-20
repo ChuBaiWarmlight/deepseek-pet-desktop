@@ -1,0 +1,9 @@
+# dependencies
+node_modules/
+# frontend build
+dist/
+# tauri / rust
+src-tauri/target/
+# misc
+*.log
+.DS_Store
