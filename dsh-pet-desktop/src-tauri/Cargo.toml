@@ -32,6 +32,7 @@ rfd = "0.15"
 
 # 系统感知：前台应用 / 系统空闲 / 电量（纯 Win32 读取，仅 Windows）。
 [target.'cfg(windows)'.dependencies]
+winreg = "0.55"
 winapi = { version = "0.3", features = [
   "sysinfoapi",
   "winuser",

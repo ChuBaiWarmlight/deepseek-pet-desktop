@@ -128,6 +128,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
           <span className="dsh-vpet-settings-label">喝水提醒</span>
           <Toggle checked={p.waterOn} onChange={p.setWaterOn} label="喝水提醒" />
         </div>
+        <AutoStartSetting />
       </Section>
       <Section label="外观与主题" open={p.sectionsOpen.appearance} onToggle={() => toggle("appearance")}>
         <div className="dsh-vpet-theme-grid">
@@ -600,6 +601,50 @@ function Section(props: { label: string; open: boolean; onToggle: () => void; ch
       </button>
       {props.open && <div className="dsh-vpet-sec-body">{props.children}</div>}
     </div>
+  );
+}
+
+function AutoStartSetting() {
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(true);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    void bridge
+      .getAutoStart()
+      .then(setEnabled)
+      .catch((e) => setMsg(`读取失败：${e instanceof Error ? e.message : String(e)}`))
+      .finally(() => setBusy(false));
+  }, []);
+
+  const change = async (next: boolean) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const actual = await bridge.setAutoStart(next);
+      setEnabled(actual);
+      setMsg(
+        actual
+          ? "已开启，下次登录 Windows 会自动启动（不会补启动本次会话）。"
+          : "已关闭，下次登录 Windows 不再自动启动。",
+      );
+    } catch (e) {
+      setMsg(`设置失败：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="dsh-vpet-settings-row">
+        <span className="dsh-vpet-settings-label">开机自启</span>
+        <Toggle checked={enabled} onChange={(next) => void change(next)} label="开机自启" />
+      </div>
+      <div className="dsh-vpet-settings-hint">
+        {msg || "状态读取中… 如果任务管理器禁用了本应用，这里会显示为关闭。"}
+      </div>
+    </>
   );
 }
 

@@ -54,8 +54,10 @@ pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
             }
             "autostart" => {
                 let state = app.state::<crate::config::Store>();
-                let enabled = !state.get().auto_start;
-                let _ = crate::autostart::apply(&state, enabled);
+                let current = crate::autostart::is_enabled().unwrap_or(state.get().auto_start);
+                if let Err(e) = crate::autostart::apply(&state, !current) {
+                    crate::window::diag(&format!("autostart: tray toggle failed: {e}"));
+                }
             }
             "quit" => app.exit(0),
             _ => {}

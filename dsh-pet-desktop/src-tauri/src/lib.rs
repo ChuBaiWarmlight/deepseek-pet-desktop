@@ -26,15 +26,31 @@ pub fn run() {
     std::panic::set_hook(Box::new(|info| {
         crate::window::diag(&format!("panic: {info}"));
     }));
+    let exe = std::env::current_exe()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|e| format!("<unknown: {e}>"));
+    window::diag(&format!(
+        "boot: version={} pid={} exe={} autostart_launch={}",
+        env!("CARGO_PKG_VERSION"),
+        std::process::id(),
+        exe,
+        autostart::is_autostart_launch()
+    ));
+    let store = config::Store::load();
+    window::diag(&format!(
+        "boot: configured_auto_start={}",
+        store.get().auto_start
+    ));
 
     tauri::Builder::default()
         // 共享状态：AI 配置 + 记忆/日记/聊天记录 + 交互区（穿透轮询用）
-        .manage(config::Store::load())
+        .manage(store)
         .manage(storage::RecordsStore::load())
         .manage(window::HitRegions::default())
         .manage(agent_hub::AgentHub::load())
         .manage(work_focus::WorkFocus::default())
         .setup(|app| {
+            autostart::reconcile(&app.state::<config::Store>());
             let pruned = timeline::prune(90);
             if pruned > 0 {
                 window::diag(&format!("timeline prune removed {pruned} day files"));
